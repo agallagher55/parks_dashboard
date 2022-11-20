@@ -5,7 +5,7 @@ import configparser
 import numpy as np
 import pandas as pd
 
-from utils import domain_mapping
+from utils import domain_mapping, create_fgdb
 from logger import function_logger as loggy
 from logger import logger as func_logger
 
@@ -160,25 +160,25 @@ if __name__ == '__main__':
     try:
         config = configparser.ConfigParser()
         config.read("config.ini")
-    
+
         EXCEL_OUTPUT = config.get("options", "EXCEL_OUTPUT")
-    
+
         SDE = config.get("options", "SERVER_SDE")
         REFERENCE_GDB = config.get("options", "REFERENCE_GDB")
-    
+
         WORKSPACE_GDB = config.get("options", "WORKSPACE_GDB")
-    
+
         BOAT_FACILITIES = os.path.join(SDE, "SDEADM.AST_boat_facility")
         REC_POINTS = os.path.join(SDE, "SDEADM.LND_park_recreation_feature")
         REC_POLYS = os.path.join(SDE, "SDEADM.LND_outdoor_rec_poly")
         POLLING_DISTRICTS = os.path.join(SDE, "SDEADM.ADM_electoral_boundaries", "SDEADM.ADM_polling_district")
-    
+
         PARKS = os.path.join(SDE, "SDEADM.LND_hrm_parcel_parks", "SDEADM.LND_hrm_park")
         COMMUNITIES = os.path.join(SDE, "SDEADM.ADM_gsa_boundaries", "SDEADM.ADM_gsa_polygon")
         RURAL_COMM_AREAS = os.path.join(REFERENCE_GDB, "rural_rec_commuter_areas")
-    
+
         POPULATION_LOOKUP = os.path.join(REFERENCE_GDB, "population_index_table_csv")
-    
+
         # # SPATIAL ANALYSIS
         # # Get rec feature+poly info
         # rec_feature_and_polys = rec_feature_info(REC_POINTS, REC_POLYS, WORKSPACE_GDB)
@@ -196,10 +196,10 @@ if __name__ == '__main__':
         #
         # # Get x,y coordinates
         # add_lat_long(feature_with_reference_data)
-    
+
         # ADD ATTRIBUTE DATA
         location_data_feature = os.path.join(WORKSPACE_GDB, "features_with_location_data")
-    
+
         # Translate Domain values to codes: condition, material, MAINRECUSE (subtype - check domains),
         # owner_domain_mapping = domain_mapping("AAA_asset_owner", SDE)
         condition_domain_mapping = domain_mapping("AAA_asset_condrat", SDE)
@@ -207,101 +207,101 @@ if __name__ == '__main__':
         material_domain_mapping = domain_mapping("LND_recreation_material", SDE)  # TODO: Doesnt get WDCH?
         boat_facility_mapping = domain_mapping("AST_boatfacility_material", SDE)
         asset_stat_mapping = domain_mapping("AAA_asset_stat", SDE)
-    
+
         material_domain_mapping.update(boat_facility_mapping)
-    
+
         owner_domain_mapping = {'HRM': 'Halifax', 'PROV': 'Province of Nova Scotia', 'PRIV': 'Private Person, Business, Organization or Agency', 'HW': 'Halifax Water', 'DND': 'Department of National Defense', 'FED': 'Federal', 'NSPI': 'Nova Scotia Power', 'CN': 'Canadian National', 'HDBC': 'Halifax-Dartmouth Bridge Commission', 'CCGRD': 'Canadian Coast Guard', 'CNDO': 'Condominium Corporation', 'CSAP': 'Conseil scolaire acadien provincial', 'HIAA': 'Halifax International Airport Authority', 'HRSB': 'Halifax Regional School Board', 'UN': 'Unknown', 'NA': 'Not Applicable', 'NTO': 'Not Taken Over', 'TPA': 'Third Party Agreement'}
-    
+
         feature_rows = [row for row in arcpy.da.SearchCursor(location_data_feature, "*")]
         feature_fields = [x.name for x in arcpy.ListFields(location_data_feature)]
-    
+
         df = pd.DataFrame(feature_rows, columns=feature_fields)
-    
+
         loggy.info("Renaming columns...")
         df.rename(
             columns={
                 'NAME': 'Rural_Rec_Commuter_Area',
                 "GSA_NAME": 'Community_Name',
                 'SDEADM_LND_park_recreation_feature_REC_TYPE': "REC_TYPE",
-    
+
                 "SDEADM_LND_outdoor_rec_poly_CLASS": "CLASS",
                 'SDEADM_LND_park_recreation_feature_NUM_COURTS': "NUM_COURTS",
-    
+
                 "OWNER": "AST_boat_facility_OWNER",
                 "ASSETCODE": "AST_boat_facility_ASSETCODE",
-    
+
                 "SDEADM_LND_park_recreation_feature_REC_NAME": "REC_NAME",
                 "SDEADM_LND_park_recreation_feature_MAINRECUSE": "MAINRECUSE",
-    
+
                 "SDEADM_LND_outdoor_rec_poly_OWNER": "OWNER",
-    
+
             },
             inplace=True
         )
-    
+
         def courts_count(row):
             if row["MAINRECUSE"]:
                 if "HALF" in row["MAINRECUSE"]:
                     return 0.50
-    
+
                 elif "STANDARD" in row["MAINRECUSE"]:
                     return 1
-    
+
             return row["NUM_COURTS"]
-    
+
         def subcat_one(row):
             subcat_one_values = [
                 "BASEBALL", "BASKETBALL FULL COURT", "BASKETBALL HALF COURT", "CRICKET", "FOOTBALL", "GENERAL PLAYGROUND",
                 "LACROSSE", "LAWN BOWLING", "NON STANDARD COURT", "OUTDOOR GYM", "PICKLEBALL", "RUGBY", "RUNNING TRACK",
                 "SOCCER", "SPRAY POOL", "TENNIS", "VOLLEYBALL", "SPORTSFIELD"
             ]
-    
+
             if row["AST_boat_facility_ASSETCODE"]:
                 if row["AST_boat_facility_ASSETCODE"] in ("BDK", "BOL"):
                     mapping = {"BDK": "Boat Dock", "BOL": "Boat Launch"}
                     return mapping.get(row["AST_boat_facility_ASSETCODE"])
-    
+
             elif row["MAINRECUSE"] in subcat_one_values:
                 return row["MAINRECUSE"]
-    
+
             elif row["Asset_name"]:
                 if 'SKATEPARK' in row["Asset_name"]:
                     return "Skatepark"
-    
+
                 elif "SOCCER" in row["Asset_name"]:
                     return "Soccer Field"
-    
+
                 elif "Basketball" in row["Asset_name"]:
                     return "Basketball Court"
-    
+
                 elif row["Asset_name"] in ['RUGBY', 'LACROSSE', 'FOOTBALL']:
                     return row["MAINRECUSE"]
-    
+
             else:
                 return ""
-    
+
         def subcat_two(row):
             if row["Asset_name"]:
                 if " FIELD" in row["Asset_name"]:
                     return "Sports Field"
-    
+
             if row["MAINRECUSE"]:
                 if "PLAYFIELD" in row["MAINRECUSE"]:
                     return "Sports Field"
-    
+
             return ""
-    
-    
+
+
         loggy.info("Updating column values...")
         df["OWNER"] = df.apply(lambda row: row["OWNER"] if row["OWNER"] else row["AST_boat_facility_OWNER"], axis=1)
         df["Material"] = df.apply(lambda row: row["MAT"] if row["MAT"] else row['SDEADM_LND_outdoor_rec_poly_MAT'], axis=1)
-    
+
         df["Condition"] = np.where(df["CONDIT"].notnull(), df["CONDIT"], df['SDEADM_LND_outdoor_rec_poly_CONDIT'])
         df["Install_Year"] = np.where(df['INSTYR'].notnull(), df['INSTYR'], df['SDEADM_LND_outdoor_rec_poly_INSTYR'])
         df['asset_location'] = np.where(df['LOCATION'].notnull(), df['LOCATION'], df['SDEADM_LND_outdoor_rec_poly_LOCATION'])
         df['Ownership_final'] = np.where(df['OWNER'].notnull(), df['OWNER'], df['AST_boat_facility_OWNER'])
         df['AssetID'] = np.where(df['ASSETID'].notnull(), df['ASSETID'], df['SDEADM_LND_park_recreation_feature_ASSETID'])
-    
+
         df["WARRANTYDATE"] = np.where(df["WARRANTYDATE"].notnull(), df["WARRANTYDATE"], df['SDEADM_LND_outdoor_rec_poly_WARRANTYDATE'])
         df['INSTYRCONF'] = np.where(df['INSTYRCONF'].notnull(), df['INSTYRCONF'], df['SDEADM_LND_outdoor_rec_poly_INSTYRCONF'])
         df['MATCONF'] = np.where(df['MATCONF'].notnull(), df['MATCONF'], df['SDEADM_LND_outdoor_rec_poly_MATCONF'])
@@ -312,17 +312,17 @@ if __name__ == '__main__':
         df['WARNTYLAB'] = np.where(df['WARNTYLAB'].notnull(), df['WARNTYLAB'], df['SDEADM_LND_outdoor_rec_poly_WARNTYLAB'])
         df['CONDITDTE'] = np.where(df['CONDITDTE'].notnull(), df['CONDITDTE'], df['SDEADM_LND_outdoor_rec_poly_CONDITDTE'])
         df['CONDICONF'] = np.where(df['CONDICONF'].notnull(), df['CONDICONF'], df['SDEADM_LND_outdoor_rec_poly_CONDICONF'])
-    
+
         df["Rural_Rec_Commuter_Area"] = np.where(df["Rural_Rec_Commuter_Area"].notnull(), df["Rural_Rec_Commuter_Area"], "Regional Centre")
         df["Asset_name"] = np.where(df["REC_NAME"].notnull(), df["REC_NAME"].str.upper(), df["BOATNAME"].str.upper())
         df["School_in_name"] = np.where(df["Asset_name"].str.contains("SCHOOL"), "Yes", "No")
         df["DISTNAME_ID"] = df['DIST_ID'].astype(str) + " - " + df["DISTNAME"]
         df["Community_Name"] = df["Community_Name"].str.title()
-    
+
         df["Number_of_courts_final"] = df.apply(courts_count, axis=1)
         df["Subcategory_1"] = df.apply(subcat_one, axis=1)
         df["Subcategory_2"] = df.apply(subcat_two, axis=1)
-    
+
         df.replace(
             {
                 "Subcategory_1": {
@@ -334,7 +334,7 @@ if __name__ == '__main__':
             },
             inplace=True
         )
-    
+
         loggy.info(f"\tUpdating material values...")
         df.replace(
             {
@@ -353,10 +353,10 @@ if __name__ == '__main__':
             },
             inplace=True
         )
-    
+
         loggy.info("Filtering out assets...")
         owners_of_interest = ['Halifax', 'Halifax Regional School Board', 'HRSB', 'Halifax Water', 'HW', 'Nova Scotia Power', 'NSPI']
-    
+
         filtered_df = df[
             (
                     df["OWNER"].isin(owners_of_interest) |
@@ -366,7 +366,7 @@ if __name__ == '__main__':
                     (df["Subcategory_1"].str.len() > 0) | (df["Subcategory_2"].str.len() > 0)
             )
         ]
-    
+
         keep_fields = [
             # "REC_TYPE",
             'OWNER', 'Install_Year',
@@ -384,63 +384,71 @@ if __name__ == '__main__':
             'AssetID',
             # 'SDEADM_LND_park_recreation_feature_ADDDATE'
         ]
-    
+
         df = df[:][keep_fields]
-    
+
         try:
             final_df = filtered_df[:][keep_fields]
             final_df.to_excel(EXCEL_OUTPUT, index=False, encoding='utf-8-sig')
-    
+
         except PermissionError as e:
             loggy.info(f"Can't create new csv because existing file is already open...")
             loggy.info(e)
-    
-    
+
+
         @func_logger
         def compare_results(model_output_file, script_output_file):
             """
             - Compare results from model vs results from script
-            :param model_output_file: 
-            :param script_output_file: 
-            :return: 
+                DUNCAN MACMILLAN HIGH SCHOOL PARK BASKETBALL COURT  -> Now MARINE DRIVE ACADEMY
+                DUNCAN MACMILLAN HIGH SCHOOL PARK SPORT FIELD  -> Now MARINE DRIVE ACADEMY
+            :param model_output_file:
+            :param script_output_file:
+            :return:
             """
             model_results_df = pd.read_excel(model_output_file)
             results_df = pd.read_excel(script_output_file)
-    
+
             model_names = model_results_df['Asset_Name_Final'].values.tolist()
             names = results_df['Asset_name'].values.tolist()
-    
+
             missing_names = [x for x in model_names if x not in names if x]
             missing_model_names = [x for x in names if x not in model_names if type(x) == str]
-    
+
             with open("extra_assets.txt", "w") as file:
                 print("Extra Assets:")
                 file.write("Extra Assets:")
-    
+
                 for count, name in enumerate(sorted(missing_model_names), start=1):
                     print(f"\t{count}) {name}")
                     file.write(f"\n\t{count}) {name}")
-    
+
             with open("missing_assets.txt", "w") as file:
                 print("\nmissing_names:")
                 file.write("Missing Assets:")
-    
+
                 for count, name in enumerate(sorted(missing_names), start=1):
                     print(f"\t{count}) {name}")
                     file.write(f"\n\t{count}) {name}")
-    
-    
+
         model_results_xl = r"T:\work\giss\monthly\202211nov\gallaga\parks dashboard\server_setup\scripts\HRM Park Asset Data 20221115.xls"
         compare_results(model_results_xl, EXCEL_OUTPUT)
-    
+
+    except arcpy.ExecuteError:
+        arcpy_msg = arcpy.GetMessages(2)
+
+        loggy.error(f"Arcpy Error:")
+        loggy.error(arcpy_msg)
+
+        print(arcpy_msg)
+
     except Exception as e:
-        loggy.error(e)
+        loggy.error(f"General Error: {e}")
         # TODO: Add email notifier
         # TODO: Add as cron job
-    
+
     # TODO: Final report from Anders' has courts given to boat facilities...
     # TODO: boat facilities have a rec type
 
-    # DUNCAN MACMILLAN HIGH SCHOOL PARK BASKETBALL COURT  -> Now MARINE DRIVE ACADEMY
-    # DUNCAN MACMILLAN HIGH SCHOOL PARK SPORT FIELD  -> Now MARINE DRIVE ACADEMY
+
 
