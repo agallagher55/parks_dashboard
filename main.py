@@ -14,6 +14,27 @@ arcpy.env.overwriteOutput = True
 
 loggy.setLevel("INFO")
 
+config = configparser.ConfigParser()
+config.read("config.ini")
+
+EXCEL_OUTPUT = config.get("options", "EXCEL_OUTPUT")
+
+SDE = config.get("options", "SERVER_SDE")
+REFERENCE_GDB = config.get("options", "REFERENCE_GDB")
+
+WORKSPACE_GDB = config.get("options", "WORKSPACE_GDB")
+
+BOAT_FACILITIES = os.path.join(SDE, "SDEADM.AST_boat_facility")
+REC_POINTS = os.path.join(SDE, "SDEADM.LND_park_recreation_feature")
+REC_POLYS = os.path.join(SDE, "SDEADM.LND_outdoor_rec_poly")
+POLLING_DISTRICTS = os.path.join(SDE, "SDEADM.ADM_electoral_boundaries", "SDEADM.ADM_polling_district")
+
+PARKS = os.path.join(SDE, "SDEADM.LND_hrm_parcel_parks", "SDEADM.LND_hrm_park")
+COMMUNITIES = os.path.join(SDE, "SDEADM.ADM_gsa_boundaries", "SDEADM.ADM_gsa_polygon")
+RURAL_COMM_AREAS = os.path.join(REFERENCE_GDB, "rural_rec_commuter_areas")
+
+POPULATION_LOOKUP = os.path.join(REFERENCE_GDB, "population_index_table_csv")
+
 
 @func_logger
 def rec_feature_info(rec_feature, rec_poly, output_workspace):
@@ -157,28 +178,8 @@ def add_lat_long(feature):
 
 
 if __name__ == '__main__':
+    
     try:
-        config = configparser.ConfigParser()
-        config.read("config.ini")
-
-        EXCEL_OUTPUT = config.get("options", "EXCEL_OUTPUT")
-
-        SDE = config.get("options", "SERVER_SDE")
-        REFERENCE_GDB = config.get("options", "REFERENCE_GDB")
-
-        WORKSPACE_GDB = config.get("options", "WORKSPACE_GDB")
-
-        BOAT_FACILITIES = os.path.join(SDE, "SDEADM.AST_boat_facility")
-        REC_POINTS = os.path.join(SDE, "SDEADM.LND_park_recreation_feature")
-        REC_POLYS = os.path.join(SDE, "SDEADM.LND_outdoor_rec_poly")
-        POLLING_DISTRICTS = os.path.join(SDE, "SDEADM.ADM_electoral_boundaries", "SDEADM.ADM_polling_district")
-
-        PARKS = os.path.join(SDE, "SDEADM.LND_hrm_parcel_parks", "SDEADM.LND_hrm_park")
-        COMMUNITIES = os.path.join(SDE, "SDEADM.ADM_gsa_boundaries", "SDEADM.ADM_gsa_polygon")
-        RURAL_COMM_AREAS = os.path.join(REFERENCE_GDB, "rural_rec_commuter_areas")
-
-        POPULATION_LOOKUP = os.path.join(REFERENCE_GDB, "population_index_table_csv")
-
         # # SPATIAL ANALYSIS
         # # Get rec feature+poly info
         # rec_feature_and_polys = rec_feature_info(REC_POINTS, REC_POLYS, WORKSPACE_GDB)
