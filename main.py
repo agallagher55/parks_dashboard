@@ -23,7 +23,6 @@ EXCEL_OUTPUT = config.get("options", "EXCEL_OUTPUT")
 
 SDE = config.get("options", "SERVER_SDE") if "APP" in PC_NAME else config.get("options", "SDE")
 REFERENCE_GDB = config.get("options", "REFERENCE_GDB")
-
 WORKSPACE_GDB = config.get("options", "WORKSPACE_GDB")
 
 BOAT_FACILITIES = os.path.join(SDE, "SDEADM.AST_boat_facility")
@@ -82,16 +81,16 @@ def rec_feature_info(rec_feature, rec_poly, output_workspace):
 @func_logger
 def boat_info(boat_facilities):
     """
-    This function filters a given layer of boat facilities (boat_facilities) to only include those owned by HRM. 
+    This function filters a given layer of boat facilities (boat_facilities) to only include those owned by HRM.
     The resulting layer is saved in memory.
 
     Input:
     boat_facilities: A layer containing boat facilities.
-    
+
     Output:
     hrm_boats: A file path to the saved layer of HRM-owned boat facilities.
     """
-    
+
     # Get boat facilities owned by HRM
     loggy.info(f"\nGetting HRM boat facilities...")
 
@@ -106,6 +105,19 @@ def boat_info(boat_facilities):
 
 @func_logger
 def merge_features(features: list, merged_feature_name: str, output_workspace):
+    """
+    This function merges a list of feature layers (features) into a single layer and
+    saves it in the specified output_workspace with the given merged_feature_name.
+
+    Inputs:
+    features: A list of file paths to feature layers that should be merged.
+    merged_feature_name: A string representing the desired name for the merged feature layer.
+    output_workspace: A file path to the location where the merged layer should be saved.
+
+    Output:
+    merged_feature: A file path to the saved merged feature layer.
+    """
+
     loggy.info(f"Merging: {', '.join(features)} to\n\t {os.path.join(output_workspace, merged_feature_name)}")
 
     # Merge GP tool: adds features as new rows and columns from each feature as new columns
@@ -118,15 +130,22 @@ def merge_features(features: list, merged_feature_name: str, output_workspace):
 
 
 @func_logger
-def add_location_data(feature, workspace):
+def add_location_data(feature, workspace, output_name: str="features_with_location_data"):
     """
-    - Add district, community, park info.
-    :param feature:
-    :param workspace:
-    :return:
+    This function adds location data (district, community, park information) to a given feature layer (feature) and
+    saves the resulting layer in the specified workspace.
+
+    The location data is added through spatial joins with the following layers:
+        polling Districts, Communities, Rural Recreation Commuter Areas, and Parks.
+
+    :param feature: A file path to a feature layer to which location data should be added.
+    :param workspace: A file path to the location where the resulting layer should be saved.
+    :param output_name:
+
+    :return: A file path to the saved layer with added location data.
     """
 
-    final_feature_output = os.path.join(workspace, "features_with_location_data")
+    final_feature_output = os.path.join(workspace, output_name)
 
     # CIVIC_ID on rec feature, CIV_ID on boat facility --> 4 features don't have a civic/civ id
     loggy.info(f"\nAdding district data to {feature}...")
@@ -137,8 +156,6 @@ def add_location_data(feature, workspace):
         join_operation="JOIN_ONE_TO_ONE",
         join_type="KEEP_ALL",
         match_option="INTERSECT",
-        search_radius="",
-        distance_field_name=""
     )[0]
 
     loggy.info(f"\nAdding community data to {feature}...")
@@ -149,8 +166,6 @@ def add_location_data(feature, workspace):
         join_operation="JOIN_ONE_TO_ONE",
         join_type="KEEP_ALL",
         match_option="INTERSECT",
-        search_radius="",
-        distance_field_name=""
     )
 
     loggy.info(f"\nAdding Rural Recreation Commuter Area data to {feature}...")
@@ -161,8 +176,6 @@ def add_location_data(feature, workspace):
         join_operation="JOIN_ONE_TO_ONE",
         join_type="KEEP_ALL",
         match_option="INTERSECT",
-        search_radius="",
-        distance_field_name=""
     )[0]
 
     loggy.info(f"\nAdding parks data to {feature}...")
@@ -173,8 +186,6 @@ def add_location_data(feature, workspace):
         join_operation="JOIN_ONE_TO_ONE",
         join_type="KEEP_ALL",
         match_option="INTERSECT",
-        search_radius="",
-        distance_field_name=""
     )
 
     loggy.info("\nAdding district population info...")
@@ -208,13 +219,12 @@ if __name__ == '__main__':
 
     try:
         # SPATIAL ANALYSIS
-        # Get rec feature+poly info
         rec_feature_and_polys = rec_feature_info(REC_POINTS, REC_POLYS, WORKSPACE_GDB)
 
         # Get HRM boat facilities
         hrm_boat_facilities = boat_info(BOAT_FACILITIES)
 
-        # Merge assets
+        # Merge rec feature data with boat facility data
         merged_assets = merge_features(
             [rec_feature_and_polys, hrm_boat_facilities],
             "merged_feature",
@@ -226,11 +236,10 @@ if __name__ == '__main__':
         # Add reference data: District Info. and populations, community, park,
         feature_with_reference_data = add_location_data(merged_assets, WORKSPACE_GDB)
 
-        # Get x,y coordinates
+        # Add x,y coordinates
         add_lat_long(feature_with_reference_data)
 
         # ADD ATTRIBUTE DATA
-        location_data_feature = os.path.join(WORKSPACE_GDB, "features_with_location_data")
 
         # Translate Domain values to codes: condition, material, MAINRECUSE (subtype - check domains),
         # owner_domain_mapping = domain_mapping("AAA_asset_owner", SDE)
@@ -244,8 +253,8 @@ if __name__ == '__main__':
 
         owner_domain_mapping = {'HRM': 'Halifax', 'PROV': 'Province of Nova Scotia', 'PRIV': 'Private Person, Business, Organization or Agency', 'HW': 'Halifax Water', 'DND': 'Department of National Defense', 'FED': 'Federal', 'NSPI': 'Nova Scotia Power', 'CN': 'Canadian National', 'HDBC': 'Halifax-Dartmouth Bridge Commission', 'CCGRD': 'Canadian Coast Guard', 'CNDO': 'Condominium Corporation', 'CSAP': 'Conseil scolaire acadien provincial', 'HIAA': 'Halifax International Airport Authority', 'HRSB': 'Halifax Regional School Board', 'UN': 'Unknown', 'NA': 'Not Applicable', 'NTO': 'Not Taken Over', 'TPA': 'Third Party Agreement'}
 
-        feature_rows = [row for row in arcpy.da.SearchCursor(location_data_feature, "*")]
-        feature_fields = [x.name for x in arcpy.ListFields(location_data_feature)]
+        feature_rows = [row for row in arcpy.da.SearchCursor(feature_with_reference_data, "*")]
+        feature_fields = [x.name for x in arcpy.ListFields(feature_with_reference_data)]
 
         df = pd.DataFrame(feature_rows, columns=feature_fields)
 
@@ -281,7 +290,16 @@ if __name__ == '__main__':
 
             return row["NUM_COURTS"]
 
-        def subcat_one(row):
+        def subcat_one(row) -> str:
+            """
+            This function assigns a subcategory value based on the contents of a given row from a feature layer.
+            The subcategory values that can be assigned include: "Boat Dock", "Boat Launch",
+            one of the values in the list subcat_one_values, "Skatepark", "Soccer Field", "Basketball Court", or an empty string.
+
+            :param row: A row from a feature layer containing the fields "AST_boat_facility_ASSETCODE", "MAINRECUSE", and "Asset_name".
+            :return: A string representing the subcategory value assigned to the given row.
+            """
+
             subcat_one_values = [
                 "BASEBALL", "BASKETBALL FULL COURT", "BASKETBALL HALF COURT", "CRICKET", "FOOTBALL", "GENERAL PLAYGROUND",
                 "LACROSSE", "LAWN BOWLING", "NON STANDARD COURT", "OUTDOOR GYM", "PICKLEBALL", "RUGBY", "RUNNING TRACK",
