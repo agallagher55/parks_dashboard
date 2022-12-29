@@ -5,7 +5,7 @@ import configparser
 import numpy as np
 import pandas as pd
 
-from utils import domain_mapping, create_fgdb
+from utils import domain_mapping, create_fgdb, subcat_one_mapping
 from logger import function_logger as loggy
 from logger import logger as func_logger
 
@@ -308,7 +308,10 @@ if __name__ == '__main__':
 
             if row["AST_boat_facility_ASSETCODE"]:
                 if row["AST_boat_facility_ASSETCODE"] in ("BDK", "BOL"):
-                    mapping = {"BDK": "Boat Dock", "BOL": "Boat Launch"}
+                    mapping = {
+                        "BDK": "Boat Dock",
+                        "BOL": "Boat Launch"
+                    }
                     return mapping.get(row["AST_boat_facility_ASSETCODE"])
 
             elif row["MAINRECUSE"] in subcat_one_values:
@@ -480,8 +483,8 @@ if __name__ == '__main__':
                     print(f"\t{count}) {name}")
                     file.write(f"\n\t{count}) {name}")
 
-        model_results_xl = r"T:\work\giss\monthly\202211nov\gallaga\parks dashboard\server_setup\scripts\HRM Park Asset Data 20221115.xls"
-        compare_results(model_results_xl, EXCEL_OUTPUT)
+        # model_results_xl = r"T:\work\giss\monthly\202211nov\gallaga\parks dashboard\server_setup\scripts\HRM Park Asset Data 20221115.xls"
+        # compare_results(model_results_xl, EXCEL_OUTPUT)
 
     except arcpy.ExecuteError:
         arcpy_msg = arcpy.GetMessages(2)
