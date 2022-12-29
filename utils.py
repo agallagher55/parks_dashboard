@@ -89,9 +89,10 @@ def domain_mapping(domain_name: str, workspace) -> dict:
         return dict()
 
 
-def subcat_one_mapping() -> dict:
-    gdb = r"C:\work\parks dashboard\aprx\GIS_for_Dashboard.gdb"
-    index_table = os.path.join(gdb, "index_table_csv")
+def subcat_one_mapping(reference_gdb) -> dict:
+    print("\nGetting Subcategory 1 mapping...")
+
+    index_table = os.path.join(reference_gdb, "index_table_csv")
 
     index_fields = [x.name for x in arcpy.ListFields(index_table) if x.name != 'OBJECTID']
     df = pd.DataFrame([row for row in arcpy.da.SearchCursor(index_table, index_fields)], columns=index_fields)
@@ -102,19 +103,46 @@ def subcat_one_mapping() -> dict:
     return mapping
 
 
+def compare_results(model_output_file, script_output_file):
+    """
+    - Compare results from model vs results from script
+        DUNCAN MACMILLAN HIGH SCHOOL PARK BASKETBALL COURT  -> Now MARINE DRIVE ACADEMY
+        DUNCAN MACMILLAN HIGH SCHOOL PARK SPORT FIELD  -> Now MARINE DRIVE ACADEMY
+    :param model_output_file:
+    :param script_output_file:
+    :return:
+    """
+
+    model_results_df = pd.read_excel(model_output_file)
+    results_df = pd.read_excel(script_output_file)
+
+    model_names = model_results_df['Asset_name'].values.tolist()
+    names = results_df['Asset_name'].values.tolist()
+
+    missing_names = sorted([x for x in model_names if x not in names if x])
+    missing_model_names = sorted([x for x in names if x not in model_names if type(x) == str])
+
+    with open("extra_assets.txt", "w") as file:
+        print("Extra Assets:")
+        file.write("Extra Assets:")
+
+        for count, name in enumerate(sorted(missing_model_names), start=1):
+            print(f"\t{count}) {name}")
+            file.write(f"\n\t{count}) {name}")
+
+    with open("missing_assets.txt", "w") as file:
+        print("\nmissing_names:")
+        file.write("Missing Assets:")
+
+        for count, name in enumerate(sorted(missing_names), start=1):
+            print(f"\t{count}) {name}")
+            file.write(f"\n\t{count}) {name}")
+
+
 if __name__ == "__main__":
-    ws = r"C:\Users\gallaga\AppData\Roaming\ESRI\ArcGISPro\Favorites\Prod_RW_SDE.sde"
+    model_xl = r"R:\ICT\ICT BIDS\ETL Data Exchange\Parks and Rec Assets\GIS and Python Scripts\Output\model_output_20221025.xls"
+    script_xl = r"R:\ICT\ICT BIDS\ETL Data Exchange\Parks and Rec Assets\GIS and Python Scripts\Output\park_assets.xlsx"
 
-    domain_names = ["AAA_asset_owner", "AAA_asset_condrat", "LND_recreation_material", "AST_boatfacility_assetcode", "AST_boatfacility_material"]
-    # condition, material, MAINRECUSE
-    for domain in domain_names:
-        mapping = domain_mapping(domain, ws)
-        print(mapping)
+    # subcat_one_mapping(r"R:\ICT\ICT BIDS\ETL Data Exchange\Parks and Rec Assets\GIS and Python Scripts\GIS_for_Dashboard.gdb")
 
-    # trn_bridge = r"C:\Users\gallaga\AppData\Roaming\ESRI\ArcGISPro\Favorites\Prod_RW_SDE.sde\SDEADM.TRN_bridge"
-    #
-    # workspace = create_fgdb(out_folder_path=r"T:\work\giss\monthly\202208aug\gallaga\TRN_Bridge\scripts")
-    # print(workspace)
-    #
-    # local_bridge = copy_feature(trn_bridge, workspace)
-    # print(local_bridge)
+    compare_results(model_xl, script_xl)
