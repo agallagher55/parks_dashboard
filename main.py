@@ -17,9 +17,11 @@ loggy.setLevel("INFO")
 config = configparser.ConfigParser()
 config.read("config.ini")
 
+PC_NAME = os.environ['COMPUTERNAME']
+
 EXCEL_OUTPUT = config.get("options", "EXCEL_OUTPUT")
 
-SDE = config.get("options", "SERVER_SDE")
+SDE = config.get("options", "SERVER_SDE") if "APP" in PC_NAME else config.get("options", "SDE")
 REFERENCE_GDB = config.get("options", "REFERENCE_GDB")
 
 WORKSPACE_GDB = config.get("options", "WORKSPACE_GDB")
