@@ -169,7 +169,7 @@ def add_lat_long(feature):
 
     arcpy.CalculateGeometryAttributes_management(
         in_features=feature,
-        geometry_property=[["Lat", "POINT_X"], ["Long", "POINT_Y"]],
+        geometry_property=[["Lat", "POINT_Y"], ["Long", "POINT_X"]],
         length_unit="",
         area_unit="",
         coordinate_system="PROJCS[\"NAD_1983_CSRS_2010_MTM_5_Nova_Scotia\",GEOGCS[\"GCS_North_American_1983_CSRS_2010\",DATUM[\"D_North_American_1983_CSRS\",SPHEROID[\"GRS_1980\",6378137.0,298.257222101]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"False_Easting\",25500000.0],PARAMETER[\"False_Northing\",0.0],PARAMETER[\"Central_Meridian\",-64.5],PARAMETER[\"Scale_Factor\",0.9999],PARAMETER[\"Latitude_Of_Origin\",0.0],UNIT[\"Meter\",1.0]]",
@@ -178,25 +178,29 @@ def add_lat_long(feature):
 
 
 if __name__ == '__main__':
-    
+
     try:
-        # # SPATIAL ANALYSIS
-        # # Get rec feature+poly info
-        # rec_feature_and_polys = rec_feature_info(REC_POINTS, REC_POLYS, WORKSPACE_GDB)
-        #
-        # # Get HRM boat facilities
-        # hrm_boat_facilities = boat_info(BOAT_FACILITIES)
-        #
-        # # Merge assets
-        # merged_assets = merge_features([rec_feature_and_polys, hrm_boat_facilities], "merged_feature",
-        #                                WORKSPACE_GDB)  # TODO: Model's merge feature contains NO boat features
-        # # TODO: Could append boat facilities and map the fields
-        #
-        # # Add reference data: District Info. and populations, community, park,
-        # feature_with_reference_data = add_location_data(merged_assets, WORKSPACE_GDB)
-        #
-        # # Get x,y coordinates
-        # add_lat_long(feature_with_reference_data)
+        # SPATIAL ANALYSIS
+        # Get rec feature+poly info
+        rec_feature_and_polys = rec_feature_info(REC_POINTS, REC_POLYS, WORKSPACE_GDB)
+
+        # Get HRM boat facilities
+        hrm_boat_facilities = boat_info(BOAT_FACILITIES)
+
+        # Merge assets
+        merged_assets = merge_features(
+            [rec_feature_and_polys, hrm_boat_facilities],
+            "merged_feature",
+            WORKSPACE_GDB
+        )
+        # TODO: Model's merge feature contains NO boat features
+        # TODO: Could append boat facilities and map the fields
+
+        # Add reference data: District Info. and populations, community, park,
+        feature_with_reference_data = add_location_data(merged_assets, WORKSPACE_GDB)
+
+        # Get x,y coordinates
+        add_lat_long(feature_with_reference_data)
 
         # ADD ATTRIBUTE DATA
         location_data_feature = os.path.join(WORKSPACE_GDB, "features_with_location_data")
@@ -451,5 +455,6 @@ if __name__ == '__main__':
     # TODO: Final report from Anders' has courts given to boat facilities...
     # TODO: boat facilities have a rec type
 
+    # November 30, 2022 - Had to recreated R:\ICT\ICT BIDS\ETL Data Exchange\Parks and Rec Assets\GIS and Python Scripts\alex_data.gdb
 
 
