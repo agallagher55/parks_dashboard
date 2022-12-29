@@ -40,6 +40,20 @@ POPULATION_LOOKUP = os.path.join(REFERENCE_GDB, "population_index_table_csv")
 
 @func_logger
 def rec_feature_info(rec_feature, rec_poly, output_workspace):
+    """
+    This function performs a spatial join between a given feature layer (rec_feature) and a polygon layer (rec_poly).
+    The resulting joined layer is saved in the specified output_workspace.
+    The join is performed based on the RECPOLYID field in both layers.
+
+    Inputs:
+    rec_feature: A feature layer containing recreational features.
+    rec_poly: A polygon layer containing recreational polygons.
+    output_workspace: A file path to the location where the joined layer should be saved.
+
+    Output:
+    joined_data: A file path to the saved joined layer.
+    """
+
     # Currently spatial joins rec polys within 1m of a rec feature
     # Join Rec feature to rec poly - need local features for successful one-to-many relationship output
 
@@ -67,6 +81,17 @@ def rec_feature_info(rec_feature, rec_poly, output_workspace):
 
 @func_logger
 def boat_info(boat_facilities):
+    """
+    This function filters a given layer of boat facilities (boat_facilities) to only include those owned by HRM. 
+    The resulting layer is saved in memory.
+
+    Input:
+    boat_facilities: A layer containing boat facilities.
+    
+    Output:
+    hrm_boats: A file path to the saved layer of HRM-owned boat facilities.
+    """
+    
     # Get boat facilities owned by HRM
     loggy.info(f"\nGetting HRM boat facilities...")
 
