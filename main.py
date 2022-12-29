@@ -5,7 +5,9 @@ import configparser
 import numpy as np
 import pandas as pd
 
-from utils import domain_mapping, create_fgdb, subcat_one_mapping
+from utils import domain_mapping, create_fgdb
+from data import subcat_one_mapping
+
 from logger import function_logger as loggy
 from logger import logger as func_logger
 
@@ -300,12 +302,6 @@ if __name__ == '__main__':
             :return: A string representing the subcategory value assigned to the given row.
             """
 
-            subcat_one_values = [
-                "BASEBALL", "BASKETBALL FULL COURT", "BASKETBALL HALF COURT", "CRICKET", "FOOTBALL", "GENERAL PLAYGROUND",
-                "LACROSSE", "LAWN BOWLING", "NON STANDARD COURT", "OUTDOOR GYM", "PICKLEBALL", "RUGBY", "RUNNING TRACK",
-                "SOCCER", "SPRAY POOL", "TENNIS", "VOLLEYBALL", "SPORTSFIELD"
-            ]
-
             if row["AST_boat_facility_ASSETCODE"]:
                 if row["AST_boat_facility_ASSETCODE"] in ("BDK", "BOL"):
                     mapping = {
@@ -314,32 +310,17 @@ if __name__ == '__main__':
                     }
                     return mapping.get(row["AST_boat_facility_ASSETCODE"])
 
-            elif row["MAINRECUSE"] in subcat_one_values:
-                return row["MAINRECUSE"]
-
-            elif row["Asset_name"]:
-                if 'SKATEPARK' in row["Asset_name"]:
-                    return "Skatepark"
-
-                elif "SOCCER" in row["Asset_name"]:
-                    return "Soccer Field"
-
-                elif "Basketball" in row["Asset_name"]:
-                    return "Basketball Court"
-
-                elif row["Asset_name"] in ['RUGBY', 'LACROSSE', 'FOOTBALL']:
-                    return row["MAINRECUSE"]
-
-                return ""
+            elif subcat_one_mapping.get(row["MAINRECUSE"]):
+                return subcat_one_mapping.get(row["MAINRECUSE"])
 
         def subcat_two(row):
-            if row["Asset_name"]:
-                if " FIELD" in row["Asset_name"]:
-                    return "Sports Field"
-
-            if row["MAINRECUSE"]:
-                if "PLAYFIELD" in row["MAINRECUSE"]:
-                    return "Sports Field"
+            if row["Subcategory_1"] in [
+                'Rugby Fields',
+                'Soccer Fields',
+                'Lacrosse Fields',
+                'Football Fields',
+            ]:
+                return 'Sports Fields'
 
             return ""
 
@@ -374,18 +355,6 @@ if __name__ == '__main__':
         df["Number_of_courts_final"] = df.apply(courts_count, axis=1)
         df["Subcategory_1"] = df.apply(subcat_one, axis=1)
         df["Subcategory_2"] = df.apply(subcat_two, axis=1)
-
-        df.replace(
-            {
-                "Subcategory_1": {
-                    "SOCCER": "Soccer Field",
-                    "MODULAR RAMPS": 'Skatepark',
-                    "PLAYFIELD": 'Soccer Field',
-                    "CONCRETE PARK": 'Skatepark',
-                }
-            },
-            inplace=True
-        )
 
         loggy.info(f"\tUpdating material values...")
         df.replace(
@@ -446,45 +415,6 @@ if __name__ == '__main__':
         except PermissionError as e:
             loggy.info(f"Can't create new csv because existing file is already open...")
             loggy.info(e)
-
-
-        @func_logger
-        def compare_results(model_output_file, script_output_file):
-            """
-            - Compare results from model vs results from script
-                DUNCAN MACMILLAN HIGH SCHOOL PARK BASKETBALL COURT  -> Now MARINE DRIVE ACADEMY
-                DUNCAN MACMILLAN HIGH SCHOOL PARK SPORT FIELD  -> Now MARINE DRIVE ACADEMY
-            :param model_output_file:
-            :param script_output_file:
-            :return:
-            """
-            model_results_df = pd.read_excel(model_output_file)
-            results_df = pd.read_excel(script_output_file)
-
-            model_names = model_results_df['Asset_Name_Final'].values.tolist()
-            names = results_df['Asset_name'].values.tolist()
-
-            missing_names = [x for x in model_names if x not in names if x]
-            missing_model_names = [x for x in names if x not in model_names if type(x) == str]
-
-            with open("extra_assets.txt", "w") as file:
-                print("Extra Assets:")
-                file.write("Extra Assets:")
-
-                for count, name in enumerate(sorted(missing_model_names), start=1):
-                    print(f"\t{count}) {name}")
-                    file.write(f"\n\t{count}) {name}")
-
-            with open("missing_assets.txt", "w") as file:
-                print("\nmissing_names:")
-                file.write("Missing Assets:")
-
-                for count, name in enumerate(sorted(missing_names), start=1):
-                    print(f"\t{count}) {name}")
-                    file.write(f"\n\t{count}) {name}")
-
-        # model_results_xl = r"T:\work\giss\monthly\202211nov\gallaga\parks dashboard\server_setup\scripts\HRM Park Asset Data 20221115.xls"
-        # compare_results(model_results_xl, EXCEL_OUTPUT)
 
     except arcpy.ExecuteError:
         arcpy_msg = arcpy.GetMessages(2)
