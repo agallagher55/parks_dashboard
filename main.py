@@ -327,7 +327,6 @@ if __name__ == '__main__':
                 elif row["Asset_name"] in ['RUGBY', 'LACROSSE', 'FOOTBALL']:
                     return row["MAINRECUSE"]
 
-            else:
                 return ""
 
         def subcat_two(row):
