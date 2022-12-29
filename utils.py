@@ -1,6 +1,7 @@
 import arcpy
 import os
 import logging
+import pandas as pd
 
 
 def with_msgs(command):
@@ -86,6 +87,19 @@ def domain_mapping(domain_name: str, workspace) -> dict:
     else:
         print(f"\tCould not find domain in {workspace}")
         return dict()
+
+
+def subcat_one_mapping() -> dict:
+    gdb = r"C:\work\parks dashboard\aprx\GIS_for_Dashboard.gdb"
+    index_table = os.path.join(gdb, "index_table_csv")
+
+    index_fields = [x.name for x in arcpy.ListFields(index_table) if x.name != 'OBJECTID']
+    df = pd.DataFrame([row for row in arcpy.da.SearchCursor(index_table, index_fields)], columns=index_fields)
+
+    records = df.to_dict("records")
+    mapping = {x["MPFU"]: x['New_NAME'] for x in records}
+
+    return mapping
 
 
 if __name__ == "__main__":
