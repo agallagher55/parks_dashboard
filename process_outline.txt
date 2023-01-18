@@ -1,0 +1,48 @@
+Filters & GIS Processes Used
+
+1. Join the park_rec_feature layer to outdoor_rec_poly
+    GP Tool: AddJoin
+
+2. Filter boat facilities to only include those owned by HRM.
+    GP Tool: Select
+
+3. Merge Joined Rec feature layer with HRM Boat Facilities to get main feature.
+    GP Tool: Merge_management
+
+4. Add District, Community, Rural Rec Commuter Area, & Parks reference data to main feature.
+    Custom Function: feature_with_reference_data()
+    GP Tools: Spatial Join, Join Field (to get population numbers for districts)
+
+5. Add Latitude and Longitude info
+    GP Tool: CalculateGeometryAttributes
+
+6. Convert feature class to a Pandas DataFrame
+
+7. Update Column Values (during join operation, some columns were prefixed with the joining table's name)
+    This uses python's pandas module
+    A. Set Owner field to Owner field or Boat Facility Owner (if exists)
+    B. Set Material field to Material field or Outdoor Rec Poly (if exists)
+    C. Set AssetID field to Park Rec Feature AssetID
+    D. Set Rec Name field to Rec Name or Boat Facility Name (if exists)
+    E. Set 'School In Name' field to Yes or No
+    F. Calculate Distname_ID field
+
+    Using Custom Functions
+        i. Calculate Number of Courts field
+        ii. Calculate Subcategory 1 Field
+        iii. Calculate Subcategory 2 Field
+
+8. Clean up Attribute Data (Uses python's Pandas module)
+    A. Translate Domain values to codes: condition, material, assetstat, owner, etc.
+    B. Remove extra fields
+
+9. Filter out Assets
+- Uses python's Pandas module
+(
+    Owner is in ['Halifax', 'Halifax Regional School Board', 'HRSB', 'Halifax Water', 'HW', 'Nova Scotia Power', 'NSPI'] OR
+    Asset Name contains the word School
+)
+    AND
+    Subcategory 1 is not null OR Subcategory 2 is not null
+
+10. Export final Table to Excel
