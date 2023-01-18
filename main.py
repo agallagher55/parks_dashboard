@@ -243,8 +243,7 @@ if __name__ == '__main__':
 
         # ADD ATTRIBUTE DATA
 
-        # Translate Domain values to codes: condition, material, MAINRECUSE (subtype - check domains),
-        # owner_domain_mapping = domain_mapping("AAA_asset_owner", SDE)
+        # Clean up Attribute Data
         condition_domain_mapping = domain_mapping("AAA_asset_condrat", SDE)
         condition_confidence_mapping = domain_mapping("AAA_asset_conf", SDE)
         material_domain_mapping = domain_mapping("LND_recreation_material", SDE)  # TODO: Doesnt get WDCH?
