@@ -42,7 +42,7 @@ POPULATION_LOOKUP = os.path.join(REFERENCE_GDB, "population_index_table_csv")
 @func_logger
 def rec_feature_info(rec_feature, rec_poly, output_workspace):
     """
-    This function performs a spatial join between a given feature layer (rec_feature) and a polygon layer (rec_poly).
+    This function performs a join between a given feature layer (rec_feature) and a polygon layer (rec_poly).
     The resulting joined layer is saved in the specified output_workspace.
     The join is performed based on the RECPOLYID field in both layers.
 
@@ -55,7 +55,6 @@ def rec_feature_info(rec_feature, rec_poly, output_workspace):
     joined_data: A file path to the saved joined layer.
     """
 
-    # Currently spatial joins rec polys within 1m of a rec feature
     # Join Rec feature to rec poly - need local features for successful one-to-many relationship output
 
     loggy.info(f"\nJoining rec feature to rec polys...")
@@ -217,6 +216,51 @@ def add_lat_long(feature):
     )
 
 
+def courts_count(row):
+    if row["MAINRECUSE"]:
+        if "HALF" in row["MAINRECUSE"]:
+            return 0.50
+
+        elif "STANDARD" in row["MAINRECUSE"]:
+            return 1
+
+    return row["NUM_COURTS"]
+
+
+def subcat_one(row) -> str:
+    """
+    This function assigns a subcategory value based on the contents of a given row from a feature layer.
+    The subcategory values that can be assigned include: "Boat Dock", "Boat Launch",
+    one of the values in the list subcat_one_values, "Skatepark", "Soccer Field", "Basketball Court", or an empty string.
+
+    :param row: A row from a feature layer containing the fields "AST_boat_facility_ASSETCODE", "MAINRECUSE", and "Asset_name".
+    :return: A string representing the subcategory value assigned to the given row.
+    """
+
+    if row["AST_boat_facility_ASSETCODE"]:
+        if row["AST_boat_facility_ASSETCODE"] in ("BDK", "BOL"):
+            mapping = {
+                "BDK": "Boat Dock",
+                "BOL": "Boat Launch"
+            }
+            return mapping.get(row["AST_boat_facility_ASSETCODE"])
+
+    elif subcat_one_mapping.get(row["MAINRECUSE"]):
+        return subcat_one_mapping.get(row["MAINRECUSE"])
+
+
+def subcat_two(row):
+    if row["Subcategory_1"] in [
+        'Rugby Fields',
+        'Soccer Fields',
+        'Lacrosse Fields',
+        'Football Fields',
+    ]:
+        return 'Sports Fields'
+
+    return ""
+
+
 if __name__ == '__main__':
 
     try:
@@ -241,19 +285,7 @@ if __name__ == '__main__':
         # Add x,y coordinates
         add_lat_long(feature_with_reference_data)
 
-        # ADD ATTRIBUTE DATA
-
-        # Clean up Attribute Data
-        condition_domain_mapping = domain_mapping("AAA_asset_condrat", SDE)
-        condition_confidence_mapping = domain_mapping("AAA_asset_conf", SDE)
-        material_domain_mapping = domain_mapping("LND_recreation_material", SDE)  # TODO: Doesnt get WDCH?
-        boat_facility_mapping = domain_mapping("AST_boatfacility_material", SDE)
-        asset_stat_mapping = domain_mapping("AAA_asset_stat", SDE)
-
-        material_domain_mapping.update(boat_facility_mapping)
-
-        owner_domain_mapping = {'HRM': 'Halifax', 'PROV': 'Province of Nova Scotia', 'PRIV': 'Private Person, Business, Organization or Agency', 'HW': 'Halifax Water', 'DND': 'Department of National Defense', 'FED': 'Federal', 'NSPI': 'Nova Scotia Power', 'CN': 'Canadian National', 'HDBC': 'Halifax-Dartmouth Bridge Commission', 'CCGRD': 'Canadian Coast Guard', 'CNDO': 'Condominium Corporation', 'CSAP': 'Conseil scolaire acadien provincial', 'HIAA': 'Halifax International Airport Authority', 'HRSB': 'Halifax Regional School Board', 'UN': 'Unknown', 'NA': 'Not Applicable', 'NTO': 'Not Taken Over', 'TPA': 'Third Party Agreement'}
-
+        # TRANSLATE FEATURE TO A DATAFRAME
         feature_rows = [row for row in arcpy.da.SearchCursor(feature_with_reference_data, "*")]
         feature_fields = [x.name for x in arcpy.ListFields(feature_with_reference_data)]
 
@@ -281,59 +313,21 @@ if __name__ == '__main__':
             inplace=True
         )
 
-        def courts_count(row):
-            if row["MAINRECUSE"]:
-                if "HALF" in row["MAINRECUSE"]:
-                    return 0.50
-
-                elif "STANDARD" in row["MAINRECUSE"]:
-                    return 1
-
-            return row["NUM_COURTS"]
-
-        def subcat_one(row) -> str:
-            """
-            This function assigns a subcategory value based on the contents of a given row from a feature layer.
-            The subcategory values that can be assigned include: "Boat Dock", "Boat Launch",
-            one of the values in the list subcat_one_values, "Skatepark", "Soccer Field", "Basketball Court", or an empty string.
-
-            :param row: A row from a feature layer containing the fields "AST_boat_facility_ASSETCODE", "MAINRECUSE", and "Asset_name".
-            :return: A string representing the subcategory value assigned to the given row.
-            """
-
-            if row["AST_boat_facility_ASSETCODE"]:
-                if row["AST_boat_facility_ASSETCODE"] in ("BDK", "BOL"):
-                    mapping = {
-                        "BDK": "Boat Dock",
-                        "BOL": "Boat Launch"
-                    }
-                    return mapping.get(row["AST_boat_facility_ASSETCODE"])
-
-            elif subcat_one_mapping.get(row["MAINRECUSE"]):
-                return subcat_one_mapping.get(row["MAINRECUSE"])
-
-        def subcat_two(row):
-            if row["Subcategory_1"] in [
-                'Rugby Fields',
-                'Soccer Fields',
-                'Lacrosse Fields',
-                'Football Fields',
-            ]:
-                return 'Sports Fields'
-
-            return ""
-
-
         loggy.info("Updating column values...")
-        df["OWNER"] = df.apply(lambda row: row["OWNER"] if row["OWNER"] else row["AST_boat_facility_OWNER"], axis=1)
-        df["Material"] = df.apply(lambda row: row["MAT"] if row["MAT"] else row['SDEADM_LND_outdoor_rec_poly_MAT'], axis=1)
+        df["OWNER"] = df.apply(
+            lambda row: row["OWNER"] if row["OWNER"] else row["AST_boat_facility_OWNER"], axis=1
+        )
+        df["Material"] = df.apply(
+            lambda row: row["MAT"] if row["MAT"] else row['SDEADM_LND_outdoor_rec_poly_MAT'], axis=1
+        )
+
+        df['Ownership_final'] = np.where(df['OWNER'].notnull(), df['OWNER'], df['AST_boat_facility_OWNER'])
+
+        df['AssetID'] = np.where(df['ASSETID'].notnull(), df['ASSETID'], df['SDEADM_LND_park_recreation_feature_ASSETID'])
 
         df["Condition"] = np.where(df["CONDIT"].notnull(), df["CONDIT"], df['SDEADM_LND_outdoor_rec_poly_CONDIT'])
         df["Install_Year"] = np.where(df['INSTYR'].notnull(), df['INSTYR'], df['SDEADM_LND_outdoor_rec_poly_INSTYR'])
         df['asset_location'] = np.where(df['LOCATION'].notnull(), df['LOCATION'], df['SDEADM_LND_outdoor_rec_poly_LOCATION'])
-        df['Ownership_final'] = np.where(df['OWNER'].notnull(), df['OWNER'], df['AST_boat_facility_OWNER'])
-        df['AssetID'] = np.where(df['ASSETID'].notnull(), df['ASSETID'], df['SDEADM_LND_park_recreation_feature_ASSETID'])
-
         df["WARRANTYDATE"] = np.where(df["WARRANTYDATE"].notnull(), df["WARRANTYDATE"], df['SDEADM_LND_outdoor_rec_poly_WARRANTYDATE'])
         df['INSTYRCONF'] = np.where(df['INSTYRCONF'].notnull(), df['INSTYRCONF'], df['SDEADM_LND_outdoor_rec_poly_INSTYRCONF'])
         df['MATCONF'] = np.where(df['MATCONF'].notnull(), df['MATCONF'], df['SDEADM_LND_outdoor_rec_poly_MATCONF'])
@@ -354,6 +348,17 @@ if __name__ == '__main__':
         df["Number_of_courts_final"] = df.apply(courts_count, axis=1)
         df["Subcategory_1"] = df.apply(subcat_one, axis=1)
         df["Subcategory_2"] = df.apply(subcat_two, axis=1)
+
+        # Clean up Attribute Data
+        condition_domain_mapping = domain_mapping("AAA_asset_condrat", SDE)
+        condition_confidence_mapping = domain_mapping("AAA_asset_conf", SDE)
+        material_domain_mapping = domain_mapping("LND_recreation_material", SDE)  # TODO: Doesnt get WDCH?
+        boat_facility_mapping = domain_mapping("AST_boatfacility_material", SDE)
+        asset_stat_mapping = domain_mapping("AAA_asset_stat", SDE)
+
+        material_domain_mapping.update(boat_facility_mapping)
+
+        owner_domain_mapping = {'HRM': 'Halifax', 'PROV': 'Province of Nova Scotia', 'PRIV': 'Private Person, Business, Organization or Agency', 'HW': 'Halifax Water', 'DND': 'Department of National Defense', 'FED': 'Federal', 'NSPI': 'Nova Scotia Power', 'CN': 'Canadian National', 'HDBC': 'Halifax-Dartmouth Bridge Commission', 'CCGRD': 'Canadian Coast Guard', 'CNDO': 'Condominium Corporation', 'CSAP': 'Conseil scolaire acadien provincial', 'HIAA': 'Halifax International Airport Authority', 'HRSB': 'Halifax Regional School Board', 'UN': 'Unknown', 'NA': 'Not Applicable', 'NTO': 'Not Taken Over', 'TPA': 'Third Party Agreement'}
 
         loggy.info(f"\tUpdating material values...")
         df.replace(
