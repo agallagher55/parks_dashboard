@@ -1,3 +1,8 @@
+"""
+- Approximate run time: 17 minutes.
+
+"""
+
 # TODO: Add logging
 # TODO: Add email notifications
 # TODO: Add as chron job
@@ -837,11 +842,11 @@ def cf(a,b):
 
     # Get row count of final table
     final_table_row_count = arcpy.GetCount_management(final_phase_1_assets_3_)[0]
-    print(f"Final table row count: {final_table_row_count}.\n\tThis should be >1000.")
+    print(f"Final table row count: {final_table_row_count}.\t(This should be >1000.)")
 
     # Ensure playgrounds AND other assets are included
     asset_types = [row[0] for row in arcpy.da.SearchCursor(final_phase_1_assets_3_, "Subcategory_1", sql_clause=("DISTINCT Subcategory_1", "ORDER BY Subcategory_1"))]
-    print(f"Assets included in final feature:\n{', '.join(asset_types)}")
+    print(f"Assets included in final feature:\n\t{', '.join(asset_types)}")
 
     print(f"\nEND Time: {datetime.now()}")
 
