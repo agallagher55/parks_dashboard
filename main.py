@@ -34,7 +34,7 @@ material_codes = os.path.join(REFERENCE_GDB, "material_codes")
 
 
 def DashboardModel20230119():
-    
+
     print(f"START Time: {datetime.now()}")
 
     # Export SDE features
@@ -842,9 +842,16 @@ def cf(a,b):
     # Ensure playgrounds AND other assets are included
     asset_types = [row[0] for row in arcpy.da.SearchCursor(final_phase_1_assets_3_, "Subcategory_1", sql_clause=("DISTINCT Subcategory_1", "ORDER BY Subcategory_1"))]
     print(f"Assets included in final feature:\n{', '.join(asset_types)}")
-    
+
     print(f"\nEND Time: {datetime.now()}")
 
 
 if __name__ == '__main__':
+    # TODO: Re-run max of 2 more times if first run is unsuccessful
     DashboardModel20230119()
+    
+    """
+    Known Bugs:
+    1. Sometimes adding fields fails.
+    2. Sometimes deleting fields fails.
+    """
