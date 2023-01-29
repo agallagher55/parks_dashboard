@@ -1,10 +1,11 @@
-# TODO: Calculate length of time needed to run
 # TODO: Add logging
 # TODO: Add email notifications
 # TODO: Add as chron job
 
 import arcpy
 import os
+
+from datetime import datetime
 
 arcpy.env.overwriteOutput = True
 arcpy.SetLogHistory(False)
@@ -33,6 +34,8 @@ material_codes = os.path.join(REFERENCE_GDB, "material_codes")
 
 
 def DashboardModel20230119():
+    
+    print(f"START Time: {datetime.now()}")
 
     # Export SDE features
     print("\nExporting local features...")
@@ -831,6 +834,16 @@ def cf(a,b):
     final_asset_point_output_xlsx = fr"{Excel_Output_Location}\final_asset_point_output.xlsx"
     if dissed_3_:
         arcpy.conversion.TableToExcel(Input_Table=final_phase_1_assets_3_, Output_Excel_File=final_asset_point_output_xlsx, Use_field_alias_as_column_header="NAME", Use_domain_and_subtype_description="DESCRIPTION")
+
+    # Get row count of final table
+    final_table_row_count = arcpy.GetCount_management(final_phase_1_assets_3_)[0]
+    print(f"Final table row count: {final_table_row_count}.\n\tThis should be >1000.")
+
+    # Ensure playgrounds AND other assets are included
+    asset_types = [row[0] for row in arcpy.da.SearchCursor(final_phase_1_assets_3_, "Subcategory_1", sql_clause=("DISTINCT Subcategory_1", "ORDER BY Subcategory_1"))]
+    print(f"Assets included in final feature:\n{', '.join(asset_types)}")
+    
+    print(f"\nEND Time: {datetime.now()}")
 
 
 if __name__ == '__main__':
