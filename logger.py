@@ -10,7 +10,7 @@ import logging
 import traceback
 
 TODAY = datetime.datetime.today().date().strftime('%m%d%Y')
-LOG_FILE = "logs_{}.log".format(TODAY)
+LOG_FILE = "logs/logs_{}.log".format(TODAY)
 
 function_logger = logging.getLogger("__name__")
 level = logging.DEBUG
@@ -31,7 +31,6 @@ function_logger.addHandler(console_handler)  # print logs to console
 
 
 def logger(callback):
-
     @functools.wraps(callback)
     def wrapper(*args, **kwargs):
         print(f"\nRunning: '{callback.__name__}' function... {datetime.datetime.now().strftime('%H:%M:%S - %m/%d/%Y')}")
