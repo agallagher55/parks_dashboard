@@ -13,7 +13,6 @@ import configparser
 from datetime import datetime
 
 from logger import function_logger as loggy
-from logger import logger as func_logger
 
 arcpy.env.overwriteOutput = True
 arcpy.SetLogHistory(False)
@@ -44,7 +43,7 @@ population_index_table_csv = os.path.join(REFERENCE_GDB, "population_index_table
 material_codes = os.path.join(REFERENCE_GDB, "material_codes")
 
 
-def DashboardModel20230119():
+def create_report():
 
     # Export SDE features
     print("\nExporting local features...")
@@ -853,15 +852,14 @@ def cf(a,b):
 
 
 if __name__ == '__main__':
-    # TODO: Re-run max of 2 more times if first run is unsuccessful
-
+    # Re-run max of 2 more times if processing is unsuccessful
     retries = 2
 
     print(f"START Time: {datetime.now()}")
     loggy.info(f"START Time: {datetime.now()}")
 
     try:
-        DashboardModel20230119()
+        create_report()
 
     except arcpy.ExecuteError:
         arcpy_msgs = arcpy.GetMessages(2)
@@ -869,14 +867,14 @@ if __name__ == '__main__':
 
         if retries > 0:
             retries -= 1
-            DashboardModel20230119()
+            create_report()
 
     except Exception as e:
         loggy.error(f"ERROR: {e}")
 
         if retries > 0:
             retries -= 1
-            DashboardModel20230119()
+            create_report()
 
     loggy.info(f"END Time: {datetime.now()}")
     print(f"\nEND Time: {datetime.now()}")
