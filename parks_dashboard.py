@@ -201,6 +201,7 @@ def SequentialNumber(a):
         return a""", field_type="TEXT", enforce_domains="NO_ENFORCE_DOMAINS")
 
     if dissed_3_:
+        loggy.info("Calculating LAND ID field...")
         arcpy.management.CalculateField(in_table=playgrounds, field="LAND_ID", expression="SequentialNumber(!LAND_ID!)", expression_type="PYTHON3", code_block="""# Calculates a sequential number
 rec= 10000
 def SequentialNumber(a):
@@ -287,6 +288,7 @@ def SequentialNumber(a):
         playgrounds_with_same_lid_pid_5_ = arcpy.management.CalculateGeometryAttributes(in_features=Merge_4_, geometry_property=[["X", "CENTROID_X"], ["Y", "CENTROID_Y"]], length_unit="", area_unit="", coordinate_system="PROJCS[\"NAD_1983_CSRS_2010_MTM_5_Nova_Scotia\",GEOGCS[\"GCS_North_American_1983_CSRS_2010\",DATUM[\"D_North_American_1983_CSRS\",SPHEROID[\"GRS_1980\",6378137.0,298.257222101]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"False_Easting\",25500000.0],PARAMETER[\"False_Northing\",0.0],PARAMETER[\"Central_Meridian\",-64.5],PARAMETER[\"Scale_Factor\",0.9999],PARAMETER[\"Latitude_Of_Origin\",0.0],UNIT[\"Meter\",1.0]]", coordinate_format="SAME_AS_INPUT")[0]
 
     if dissed_3_:
+        loggy.info("Calculating PARK_ID...")
         Merge_5_ = arcpy.management.CalculateField(in_table=playgrounds_with_same_lid_pid_5_, field="PARK_ID", expression="cf(!PARK_ID!,!ParkID2!)", expression_type="PYTHON3", code_block="""def cf(a,b):
     if a is None:
         return b
@@ -296,6 +298,7 @@ def SequentialNumber(a):
        """, field_type="TEXT", enforce_domains="NO_ENFORCE_DOMAINS")[0]
 
     if dissed_3_:
+        loggy.info("Calculating LAND_ID...")
         Merge_6_ = arcpy.management.CalculateField(in_table=Merge_5_, field="LAND_ID", expression="cf(!LAND_ID!,!LandID2!)", expression_type="PYTHON3", code_block="""def cf(a,b):
     if a is None:
         return b
@@ -347,6 +350,7 @@ def SequentialNumber(a):
         playg2_4_ = arcpy.management.AddFields(in_table=a_4_, field_description=[["Park_Land_ID", "TEXT", "Park_Land_ID", "255", "", ""]])[0]
 
     if dissed_3_:
+        loggy.info("Calculating Park_Land_ID...")
         a_3_ = arcpy.management.CalculateField(in_table=playg2_4_, field="Park_Land_ID", expression="cf(!FIRST_FIRST_PARK_ID!,!FIRST_FIRST_LAND_ID!)", expression_type="PYTHON3", code_block="""def cf(a,b):
     return str(round(a))+' - '+str(round(b))""", field_type="TEXT", enforce_domains="NO_ENFORCE_DOMAINS")[0]
 
@@ -400,6 +404,7 @@ def SequentialNumber(a):
         non_playgrounds_2_ = arcpy.management.AddField(in_table=non_playgrounds, field_name="UNIQUE_ID", field_type="LONG", field_precision=None, field_scale=None, field_length=None, field_alias="UNIQUE_ID", field_is_nullable="NULLABLE", field_is_required="NON_REQUIRED", field_domain="")[0]
 
     if dissed_3_:
+        loggy.info("Calculating UNIQUE_ID...")
         non_playgrounds_3_ = arcpy.management.CalculateField(in_table=non_playgrounds_2_, field="UNIQUE_ID", expression="!OBJECTID!", expression_type="PYTHON3", code_block="", field_type="TEXT", enforce_domains="NO_ENFORCE_DOMAINS")[0]
 
     non_playgrounds_Dissolve = fr"{OutputFGDB}\non_playgrounds_Dissolve"
@@ -450,6 +455,7 @@ def SequentialNumber(a):
         arcpy.management.JoinField(in_data=NonMPtoSP_Merge_SpatialJoin, in_field="MAT", join_table=material_codes, join_field="Label", fields=["Name"])
 
     if dissed_3_:
+        loggy.info("Calculating Condition field...")
         arcpy.management.CalculateField(in_table=NonMPtoSP_Merge_SpatialJoin, field="Condition",
                                         expression="cf(!CONDIT!)", expression_type="PYTHON3", code_block="""def cf(a):
         if a == 0:
@@ -853,10 +859,14 @@ def cf(a,b):
 
 
 if __name__ == '__main__':
+    import traceback
+    import sys
+
     # Re-run max of 2 more times if processing is unsuccessful
     retries = 2
 
     print(f"START Time: {datetime.now()}")
+    loggy.info("\n")
     loggy.info(f"START Time: {datetime.now()}")
 
     try:
@@ -872,6 +882,14 @@ if __name__ == '__main__':
 
     except Exception as e:
         loggy.error(f"ERROR: {e}")
+
+        tb = sys.exc_info()[2]
+        tbinfo = traceback.format_tb(tb)[0]
+        
+        pymsg = "PYTHON ERRORS:\nTraceback Info:\n" + tbinfo + "\nError Info:\n    " + str(
+            sys.exc_info()[0]) + ": " + str(sys.exc_info()[1]) + "\n"
+
+        loggy.error(pymsg)
 
         if retries > 0:
             retries -= 1
