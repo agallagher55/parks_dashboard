@@ -5,6 +5,7 @@
 
 # TODO: Add email notifications
 # TODO: Add as chron job
+# TODO: move to E:\HRM\Scripts\Python3\parks dashboard
 
 import arcpy
 import os
