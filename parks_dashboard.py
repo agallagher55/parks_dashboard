@@ -5,7 +5,6 @@
 
 # TODO: Add email notifications
 # TODO: Add as chron job
-# TODO: move to E:\HRM\Scripts\Python3\parks dashboard
 
 import arcpy
 import os
@@ -526,7 +525,7 @@ def SequentialNumber(a):
         return 'Boat Dock'
     elif 'LAUNCH'.lower() in b.lower():
         return 'Boat Launch'""", field_type="TEXT", enforce_domains="NO_ENFORCE_DOMAINS")
-        # TODO: Subcategory_1 for playgrounds is not being calculated
+        # Subcategory_1 for playgrounds was not being calculated
 
     if dissed_3_:
         NonMPtoSP_Merge_SpatialJoin_7_ = arcpy.management.CalculateField(in_table=NonMPtoSP_Merge_SpatialJoin, field="Subcategory_1", expression="cf(!LOCATION!,!Subcategory_1!)", expression_type="PYTHON3", code_block="""def cf(a,b):
@@ -689,7 +688,7 @@ def check(a,b):
             new_field_name="Material_Name",
             new_field_alias="Material_Name",
             field_type="TEXT",  # TODO: Should be TEXT?
-            # field_type="LONG",  # TODO: Should be TEXT?
+            # field_type="LONG",
             # field_length=10485758,
             field_is_nullable="#",
             clear_field_alias="DO_NOT_CLEAR"
@@ -736,7 +735,6 @@ def check(a,b):
 
     if dissed_3_:
         merge2_SpatialJoin3_Layer5_S1_3_merge2_SpatialJoin3_Layer5_S1_3_ = arcpy.management.CalculateField(in_table=NonMPtoSP_Merge_SpatialJoin_7, field="Final_OID", expression="SequentialNumber(!OBJECTID_1!)", expression_type="PYTHON3", code_block="""# Calculates a sequential number
-# More calculator examples at esriurl.com/CalculatorExamples
 rec= 10000
 def SequentialNumber(a):
     if a is None:
