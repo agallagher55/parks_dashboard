@@ -3,7 +3,6 @@
 
 """
 
-# TODO: Add logging
 # TODO: Add email notifications
 # TODO: Add as chron job
 
@@ -13,8 +12,13 @@ import configparser
 
 from datetime import datetime
 
+from logger import function_logger as loggy
+from logger import logger as func_logger
+
 arcpy.env.overwriteOutput = True
 arcpy.SetLogHistory(False)
+
+loggy.setLevel("INFO")
 
 config = configparser.ConfigParser()
 config.read("config.ini")
@@ -41,8 +45,6 @@ material_codes = os.path.join(REFERENCE_GDB, "material_codes")
 
 
 def DashboardModel20230119():
-
-    print(f"START Time: {datetime.now()}")
 
     # Export SDE features
     print("\nExporting local features...")
@@ -850,12 +852,25 @@ def cf(a,b):
     asset_types = [row[0] for row in arcpy.da.SearchCursor(final_phase_1_assets_3_, "Subcategory_1", sql_clause=("DISTINCT Subcategory_1", "ORDER BY Subcategory_1"))]
     print(f"Assets included in final feature:\n\t{', '.join(asset_types)}")
 
-    print(f"\nEND Time: {datetime.now()}")
-
 
 if __name__ == '__main__':
     # TODO: Re-run max of 2 more times if first run is unsuccessful
-    DashboardModel20230119()
+
+    print(f"START Time: {datetime.now()}")
+    loggy.info(f"START Time: {datetime.now()}")
+
+    try:
+        DashboardModel20230119()
+    
+    except arcpy.ExecuteError:
+        arcpy_msgs = arcpy.GetMessages(2)
+        loggy.error(f"ARCPY ERROR: {arcpy_msgs}")
+        
+    except Exception as e:
+        loggy.error(f"ERROR: {e}")
+
+    loggy.info(f"END Time: {datetime.now()}")
+    print(f"\nEND Time: {datetime.now()}")
 
     """
     Known Bugs:
