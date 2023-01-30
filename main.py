@@ -9,19 +9,21 @@
 
 import arcpy
 import os
+import configparser
 
 from datetime import datetime
 
 arcpy.env.overwriteOutput = True
 arcpy.SetLogHistory(False)
 
-SDE = r"E:\HRM\Scripts\SDE\prod_RW_sdeadm.sde"
+config = configparser.ConfigParser()
+config.read("config.ini")
 
-OutputFGDB = r"R:\ICT\ICT BIDS\ETL Data Exchange\Parks and Rec Assets\GIS and Python Scripts\Dashboard Upates_20230119\output.gdb"
-SHP_DIR = r"R:\ICT\ICT BIDS\ETL Data Exchange\Parks and Rec Assets\GIS and Python Scripts\Dashboard Upates_20230119\shapefiles"
-Excel_Output_Location = r"R:\ICT\ICT BIDS\ETL Data Exchange\Parks and Rec Assets\GIS and Python Scripts\Dashboard Upates_20230119\output"
-
-REFERENCE_GDB = r"R:\ICT\ICT BIDS\ETL Data Exchange\Parks and Rec Assets\GIS and Python Scripts\GIS_for_Dashboard.gdb"
+SDE = config.get("options", "SDE")
+OutputFGDB = config.get("options", "OutputFGDB")
+SHP_DIR = config.get("options", "SHP_DIR")
+Excel_Output_Location = config.get("options", "Excel_Output_Location")
+REFERENCE_GDB = config.get("options", "REFERENCE_GDB")
 
 SDE_AST_boat_facility = os.path.join(SDE, "SDEADM.AST_boat_facility")
 SDE_LND_outdoor_rec_poly = os.path.join(SDE, "SDEADM.LND_outdoor_rec_poly")
@@ -854,7 +856,7 @@ def cf(a,b):
 if __name__ == '__main__':
     # TODO: Re-run max of 2 more times if first run is unsuccessful
     DashboardModel20230119()
-    
+
     """
     Known Bugs:
     1. Sometimes adding fields fails.
