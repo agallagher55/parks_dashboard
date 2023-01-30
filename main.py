@@ -854,7 +854,7 @@ def cf(a,b):
 
 if __name__ == '__main__':
     # TODO: Re-run max of 2 more times if first run is unsuccessful
-    
+
     retries = 2
 
     print(f"START Time: {datetime.now()}")
@@ -862,19 +862,18 @@ if __name__ == '__main__':
 
     try:
         DashboardModel20230119()
-        retries = 0
-    
+
     except arcpy.ExecuteError:
         arcpy_msgs = arcpy.GetMessages(2)
         loggy.error(f"ARCPY ERROR: {arcpy_msgs}")
-        
+
         if retries > 0:
             retries -= 1
             DashboardModel20230119()
 
     except Exception as e:
         loggy.error(f"ERROR: {e}")
-        
+
         if retries > 0:
             retries -= 1
             DashboardModel20230119()
