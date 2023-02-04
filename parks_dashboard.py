@@ -1532,11 +1532,30 @@ def cf(a,b):
 
 
 if __name__ == '__main__':
+    import traceback
+    import sys
+
     print(f"START Time: {datetime.now()}")
     loggy.info("\n")
     loggy.info(f"START Time: {datetime.now()}")
 
-    create_report()
+    try:
+
+        create_report()
+
+    except arcpy.ExecuteError:
+        arcpy_msgs = arcpy.GetMessages(2)
+        loggy.error(f"ARCPY ERROR: {arcpy_msgs}")
+
+    except Exception as e:
+        loggy.error(f"ERROR: {e}")
+
+        tb = sys.exc_info()[2]
+        tbinfo = traceback.format_tb(tb)[0]
+
+        pymsg = f"PYTHON ERRORS:\nTraceback Info:\n{tbinfo}\nError Info:\n    {sys.exc_info()[0]}: {sys.exc_info()[1]}"
+
+        loggy.error(pymsg)
 
     loggy.info(f"END Time: {datetime.now()}")
     print(f"\nEND Time: {datetime.now()}")
