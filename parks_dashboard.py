@@ -1120,18 +1120,18 @@ def cf(a,b):
         return 'No Data'
     """, field_type="TEXT", enforce_domains="NO_ENFORCE_DOMAINS")[0]
 
-    if dissed_3_:
-        final_phase_1_assets_3_ = arcpy.management.DeleteField(in_table=final_phase_1_assets_Spatial_3_,
-                                                                   drop_field=["Join_Count", "TARGET_FID",
-                                                                               "Subcategory_12", "PARK_NAME",
-                                                                               "OBJECTID_12", "Final_OID"],
-                                                                   method="DELETE_FIELDS")[0]
+    final_phase_1_assets_3_ = arcpy.management.DeleteField(
+        in_table=final_phase_1_assets_Spatial_3_,
+        drop_field=["Join_Count", "TARGET_FID", "Subcategory_12", "PARK_NAME", "OBJECTID_12", "Final_OID"],
+        method="DELETE_FIELDS"
+    )[0]
 
-    if dissed_3_:
-        arcpy.conversion.TableToExcel(Input_Table=final_phase_1_assets_3_,
-                                          Output_Excel_File=final_asset_point_output_xlsx,
-                                          Use_field_alias_as_column_header="NAME",
-                                          Use_domain_and_subtype_description="DESCRIPTION")
+    arcpy.conversion.TableToExcel(
+        Input_Table=final_phase_1_assets_3_,
+        Output_Excel_File=final_asset_point_output_xlsx,
+        Use_field_alias_as_column_header="NAME",
+        Use_domain_and_subtype_description="DESCRIPTION"
+    )
 
     final_table_row_count = int(arcpy.GetCount_management(final_phase_1_assets_3_)[0])
     loggy.info(f"Final table row count: {final_table_row_count}.")
