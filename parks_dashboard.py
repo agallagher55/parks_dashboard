@@ -1159,6 +1159,13 @@ if __name__ == '__main__':
 
     try:
 
+        if arcpy.Exists(OutputFGDB):
+            arcpy.Delete_management(OutputFGDB)
+
+        gdb_dir = os.path.dirname(OutputFGDB)
+        gdb_name = os.path.basename(OutputFGDB)
+        arcpy.CreateFileGDB_management(gdb_dir, gdb_name).getOutput(0)
+
         create_report()
 
     except arcpy.ExecuteError:
