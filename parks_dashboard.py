@@ -43,8 +43,7 @@ SDEADM_ADM_polling_district = os.path.join(SDE, "SDEADM.ADM_electoral_boundaries
 SDEADM_ADM_gsa_polygon = os.path.join(SDE, "SDEADM.ADM_gsa_boundaries", "SDEADM.ADM_gsa_polygon")
 SDEADM_LND_hrm_park = os.path.join(SDE, "SDEADM.LND_hrm_parcel_parks", "SDEADM.LND_hrm_park")
 
-
-# TODO: Remove scratchworkspace environment settings
+final_asset_point_output_xlsx = fr"{Excel_Output_Location}\final_asset_point_output.xlsx"
 
 
 def create_report():
@@ -1128,7 +1127,6 @@ def cf(a,b):
                                                                                "OBJECTID_12", "Final_OID"],
                                                                    method="DELETE_FIELDS")[0]
 
-    final_asset_point_output_xlsx = fr"{Excel_Output_Location}\final_asset_point_output.xlsx"
     if dissed_3_:
         arcpy.conversion.TableToExcel(Input_Table=final_phase_1_assets_3_,
                                           Output_Excel_File=final_asset_point_output_xlsx,
