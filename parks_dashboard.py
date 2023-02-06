@@ -1211,7 +1211,7 @@ if __name__ == '__main__':
         pymsg = f"PYTHON ERRORS:\nTraceback Info:\n{tbinfo}\nError Info:\n    {sys.exc_info()[0]}: {sys.exc_info()[1]}"
 
         loggy.error(pymsg)
-        
+
         send_error("ERROR - Parks dashboard failed", email_error_msg)
 
     loggy.info(f"END Time: {datetime.now()}")
