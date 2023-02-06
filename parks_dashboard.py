@@ -1185,7 +1185,6 @@ if __name__ == '__main__':
     loggy.info(f"\nSTART Time: {datetime.now()}")
 
     try:
-
         if arcpy.Exists(OutputFGDB):
             loggy.info(f"Deleting exists workspace, {OutputFGDB}...")
             arcpy.Delete_management(OutputFGDB)
