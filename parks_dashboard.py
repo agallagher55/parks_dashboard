@@ -3,7 +3,6 @@
 
 """
 
-# TODO: Add email notifications
 # TODO: Add as chron job
 
 import arcpy
@@ -13,13 +12,16 @@ import sys
 
 from datetime import datetime
 
-from logger import function_logger as loggy
-from hrmutils import send_error
+# from logger import function_logger as loggy
+from hrmutils import send_error, set_up_log
 
 arcpy.env.overwriteOutput = True
 arcpy.SetLogHistory(False)
 
-loggy.setLevel("INFO")
+TODAY = datetime.today().date().strftime('%m%d%Y')
+LOG_FILE = "logs/logs_{}.log".format(TODAY)
+
+loggy = set_up_log(LOG_FILE)
 
 config = configparser.ConfigParser()
 config.read("config.ini")
@@ -1184,6 +1186,7 @@ if __name__ == '__main__':
     print(f"START Time: {datetime.now()}")
     loggy.info(f"\nSTART Time: {datetime.now()}")
 
+    # TODO: Add re-tries?
     try:
         if arcpy.Exists(OutputFGDB):
             loggy.info(f"Deleting exists workspace, {OutputFGDB}...")
@@ -1207,7 +1210,10 @@ if __name__ == '__main__':
         tb = sys.exc_info()[2]
         tbinfo = traceback.format_tb(tb)[0]
 
-        pymsg = f"PYTHON ERRORS:\nTraceback Info:\n{tbinfo}\nError Info:\n    {sys.exc_info()[0]}: {sys.exc_info()[1]}"
+        pymsg = f"PYTHON ERRORS:\n" \
+                f"Traceback Info:\n" \
+                f"{tbinfo}\nError Info:\n" \
+                f"\t{sys.exc_info()[0]}: {sys.exc_info()[1]}"
 
         loggy.error(pymsg)
 
