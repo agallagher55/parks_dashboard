@@ -9,13 +9,19 @@
 import arcpy
 import os
 import configparser
+import sys
 
 from datetime import datetime
 
 from logger import function_logger as loggy
+from hrmutils import send_error
 
 arcpy.env.overwriteOutput = True
 arcpy.SetLogHistory(False)
+
+server_name = os.environ.get("COMPUTERNAME")
+script_name = os.path.basename(sys.argv[0])
+email_error_msg = f"ERROR - Parks dashboard script failed. {server_name} / {'script name'}"
 
 loggy.setLevel("INFO")
 
@@ -1174,7 +1180,6 @@ def cf(a,b):
 
 if __name__ == '__main__':
     import traceback
-    import sys
 
     print(f"START Time: {datetime.now()}")
     loggy.info(f"\nSTART Time: {datetime.now()}")
@@ -1194,6 +1199,8 @@ if __name__ == '__main__':
     except arcpy.ExecuteError:
         arcpy_msgs = arcpy.GetMessages(2)
         loggy.error(f"ARCPY ERROR: {arcpy_msgs}")
+
+        send_error(email_error_msg)
 
     except Exception as e:
         loggy.error(f"ERROR: {e}")
