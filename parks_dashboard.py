@@ -43,22 +43,33 @@ SDEADM_ADM_polling_district = os.path.join(SDE, "SDEADM.ADM_electoral_boundaries
 SDEADM_ADM_gsa_polygon = os.path.join(SDE, "SDEADM.ADM_gsa_boundaries", "SDEADM.ADM_gsa_polygon")
 SDEADM_LND_hrm_park = os.path.join(SDE, "SDEADM.LND_hrm_parcel_parks", "SDEADM.LND_hrm_park")
 
-final_asset_point_output_xlsx = fr"{Excel_Output_Location}\final_asset_point_output.xlsx"
+final_asset_point_output_xlsx = fr"{Excel_Output_Location}\park_assets.xlsx"
 
 
 def create_report():
 
-    boat_facilitiesd_2_ = arcpy.conversion.FeatureClassToFeatureClass(in_features=SDEADM_AST_boat_facility, out_path=OutputFGDB,
-                                                out_name="boat_facilitiesd", where_clause="OWNER = 'HRM'",
-                                                config_keyword="")[0]
+    # Check that Excel output location exists
+    if not os.path.exists(Excel_Output_Location):
+        raise FileNotFoundError(f"Excel output folder is invalid: {Excel_Output_Location}")
 
-    recreation_locations_2_ = arcpy.conversion.FeatureClassToFeatureClass(in_features=SDEADM_LND_outdoor_rec_poly, out_path=OutputFGDB,
-                                                out_name="recreation_locations",
-                                                config_keyword="")[0]
+    boat_facilitiesd_2_ = arcpy.conversion.FeatureClassToFeatureClass(
+        in_features=SDEADM_AST_boat_facility,
+        out_path=OutputFGDB,
+        out_name="boat_facilitiesd",
+        where_clause="OWNER = 'HRM'"
+    )[0]
 
-    rec_use_table_20230111 = arcpy.conversion.TableToTable(in_rows=SDEADM_LND_outdoor_rec_use, out_path=OutputFGDB,
-                                                           out_name="rec_use_table_20230111",
-                                                           config_keyword="")[0]
+    recreation_locations_2_ = arcpy.conversion.FeatureClassToFeatureClass(
+        in_features=SDEADM_LND_outdoor_rec_poly,
+        out_path=OutputFGDB,
+        out_name="recreation_locations"
+    )[0]
+
+    rec_use_table_20230111 = arcpy.conversion.TableToTable(
+        in_rows=SDEADM_LND_outdoor_rec_use,
+        out_path=OutputFGDB,
+        out_name="rec_use_table_20230111"
+    )[0]
 
     recreation_locations_JoinFeatures_shp = fr"{SHP_DIR}\recreation_locations_JoinFeatures.shp"
 
@@ -68,12 +79,16 @@ def create_report():
                              temporal_near_distance="", attribute_relationship=[["ASSETID", "ASSETID"]],
                              summary_fields=[], join_condition="", keep_all_target_features="")
 
-    asset_name_join_together = arcpy.conversion.FeatureClassToFeatureClass(in_features=recreation_locations_JoinFeatures_shp,
-                                                out_path=OutputFGDB, out_name="asset_name_join_together",
-                                                config_keyword="")[0]
+    asset_name_join_together = arcpy.conversion.FeatureClassToFeatureClass(
+        in_features=recreation_locations_JoinFeatures_shp,
+        out_path=OutputFGDB,
+        out_name="asset_name_join_together"
+    )[0]
 
-    asset_name_join2_6_ = arcpy.management.JoinField(in_data=asset_name_join_together, in_field="REC_USE", join_table=index_table_csv,
-                               join_field="MPFU", fields=["New_NAME"])[0]
+    asset_name_join2_6_ = arcpy.management.JoinField(
+        in_data=asset_name_join_together, in_field="REC_USE", join_table=index_table_csv,
+        join_field="MPFU", fields=["New_NAME"]
+    )[0]
 
     asset_name_join2_4_ = arcpy.management.AddFields(in_table=asset_name_join2_6_, field_description=[
         ["Ownership_Filter", "TEXT", "Ownership_Filter", "255", "", ""],
@@ -105,7 +120,7 @@ def create_report():
 
     asset_name_join2_2_asset_name_join2_2_ = arcpy.management.AddField(in_table=asset_name_join2_3_, field_name="diss_sum", field_type="LONG",
                                   field_precision=None, field_scale=None, field_length=None, field_alias="diss_sum",
-                                  field_is_nullable="NULLABLE", field_is_required="NON_REQUIRED", field_domain="")[0]
+                                  field_is_nullable="NULLABLE", field_is_required="NON_REQUIRED")[0]
 
     asset_name_join2_2_asset_name_join2_3_ = arcpy.management.CalculateField(in_table=asset_name_join2_2_asset_name_join2_2_, field="diss_sum",
                                         expression="1", expression_type="PYTHON3", code_block="", field_type="TEXT",
@@ -139,7 +154,7 @@ def create_report():
         NonMPtoSP_Merge_NonMPtoSP_Merge_2_ = arcpy.management.AddField(in_table=asset_name_join2_3_, field_name="Repeat_IDs", field_type="TEXT",
                                       field_precision=None, field_scale=None, field_length=None,
                                       field_alias="Repeat_IDs", field_is_nullable="NULLABLE",
-                                      field_is_required="NON_REQUIRED", field_domain="")[0]
+                                      field_is_required="NON_REQUIRED")[0]
 
     if dissed_3_:
         NonMPtoSP_Merge_NonMPtoSP_Merge_4_ = arcpy.management.CalculateField(in_table=NonMPtoSP_Merge_NonMPtoSP_Merge_2_, field="Repeat_IDs",
@@ -173,7 +188,7 @@ def cf(b):
     if dissed_3_:
         NonMPtoSP_Merge_NonMPtoSP_Merge_3_, Count = arcpy.management.SelectLayerByAttribute(
                 in_layer_or_view=asset_name_join2_5_, selection_type="NEW_SELECTION",
-                where_clause="Repeat_IDs = 'repeat id'", invert_where_clause="")
+                where_clause="Repeat_IDs = 'repeat id'")
 
     if dissed_3_:
         Updated_Input_With_Rows_Removed = arcpy.management.DeleteRows(in_rows=NonMPtoSP_Merge_NonMPtoSP_Merge_3_)[0]
@@ -190,8 +205,8 @@ def cf(b):
                 in_rows=filtered_for_ownership_and_m_2_,
                 out_path=OutputFGDB,
                 out_name="centroid",
-                where_clause="(Ownership_Filter = 'HRM' Or Maintenance_Filter = 'HRM') And ASSETSTAT = 'INS'",
-                config_keyword="")[0]
+                where_clause="(Ownership_Filter = 'HRM' Or Maintenance_Filter = 'HRM') And ASSETSTAT = 'INS'"
+        )[0]
 
     NonMPtoSP = fr"{OutputFGDB}\NonMPtoSP"
     if dissed_3_:
@@ -205,8 +220,7 @@ def cf(b):
 
     if dissed_3_:
         non_boat_facilities = arcpy.conversion.FeatureClassToFeatureClass(in_features=NonMPtoSP, out_path=OutputFGDB,
-                                                        out_name="non_boat_facilities",
-                                                        config_keyword="")[0]
+                                                        out_name="non_boat_facilities")[0]
 
     boat_facilitiesd_Merge = fr"{OutputFGDB}\boat_facilitiesd_Merge"
     if dissed_3_:
@@ -215,9 +229,10 @@ def cf(b):
                                    add_source="NO_SOURCE_INFO")
 
     if dissed_3_:
-        playgrounds = arcpy.conversion.FeatureClassToFeatureClass(in_features=boat_facilitiesd_Merge, out_path=OutputFGDB,
-                                                        out_name="playgrounds", where_clause="New_NAME = 'Playground'",
-                                                        config_keyword="")[0]
+        playgrounds = arcpy.conversion.FeatureClassToFeatureClass(
+            in_features=boat_facilitiesd_Merge, out_path=OutputFGDB,
+            out_name="playgrounds", where_clause="New_NAME = 'Playground'"
+        )[0]
 
     if dissed_3_:
         PLAYG_3_ = arcpy.management.CalculateField(in_table=playgrounds, field="PARK_ID",
@@ -291,10 +306,10 @@ def SequentialNumber(a):
                                         clear_field_alias="DO_NOT_CLEAR")[0]
 
     if dissed_3_:
-        filtered_pgs = arcpy.conversion.FeatureClassToFeatureClass(in_features=pg_Dissolve1_5_, out_path=OutputFGDB,
-                                                                       out_name="filtered_pgs",
-                                                                       where_clause="land_id_frequency = 1",
-                                                                       config_keyword="")[0]
+        filtered_pgs = arcpy.conversion.FeatureClassToFeatureClass(
+            in_features=pg_Dissolve1_5_, out_path=OutputFGDB,
+            out_name="filtered_pgs", where_clause="land_id_frequency = 1"
+        )[0]
 
     if dissed_3_:
         playgrounds_with_same_lid_pid = arcpy.conversion.FeatureClassToFeatureClass(in_features=pg_Dissolve1_5_, out_path=OutputFGDB,
@@ -365,7 +380,6 @@ def SequentialNumber(a):
         return b
     if b is None:
         return a
-    
        """, field_type="TEXT", enforce_domains="NO_ENFORCE_DOMAINS")[0]
 
     if dissed_3_:
@@ -380,7 +394,7 @@ def SequentialNumber(a):
     if dissed_3_:
         arcpy.gapro.GroupByProximity(input_layer=Merge_6_, output=GroupByProximity_shp,
                                          spatial_relationship="NEAR_PLANAR", spatial_near_distance="100 Meters",
-                                         temporal_relationship="NONE", temporal_near_distance="")
+                                         temporal_relationship="NONE")
 
     Dissolve3 = fr"{OutputFGDB}\Dissolve3"
     if dissed_3_:
@@ -494,10 +508,10 @@ def SequentialNumber(a):
                                                                    config_keyword="")[0]
 
     if dissed_3_:
-        non_playgrounds = arcpy.conversion.FeatureClassToFeatureClass(in_features=boat_facilitiesd_Merge, out_path=OutputFGDB,
-                                                        out_name="non_playgrounds",
-                                                        where_clause="New_NAME <> 'Playground' Or New_NAME IS NULL",
-                                                        config_keyword="")[0]
+        non_playgrounds = arcpy.conversion.FeatureClassToFeatureClass(
+            in_features=boat_facilitiesd_Merge, out_path=OutputFGDB,
+            out_name="non_playgrounds", where_clause="New_NAME <> 'Playground' Or New_NAME IS NULL"
+        )[0]
 
     if dissed_3_:
         non_playgrounds_2_ = arcpy.management.AddField(in_table=non_playgrounds, field_name="UNIQUE_ID", field_type="LONG",
@@ -782,34 +796,44 @@ def SequentialNumber(a):
     return str(a)+' - '+str(b)""", field_type="TEXT", enforce_domains="NO_ENFORCE_DOMAINS")[0]
 
     if dissed_3_:
-        final_asset_point_outputfina_XYTableToPoint_2_ = arcpy.management.JoinField(in_data=final_asset_point_outputfinal_asset_point_output_GroupByProximity_5_,
-                                       in_field="Join_Field",
-                                       join_table=final_asset_point_outputfinal_asset_point_output_GroupByProximity_4_,
-                                       join_field="Join_Field",
-                                       fields=["Asset_Name", "ASSETCODE", "ASSETID", "ASSETSTAT", "BOATNAME", "CLASS",
-                                               "CONDICONF", "CONDIT", "CONDITDTE", "Condition", "CRIT", "CRITCONF",
-                                               "DIST_ID", "DISTNAME", "DISTNAME_ID", "GLOBALID_1", "GROUP_ID", "INSTCS",
-                                               "INSTCSCONF", "INSTDATE", "INSTYR", "INSTYRCONF", "Join_Count",
-                                               "Join_Field", "Lat", "LOCATION", "Long", "MAT", "MATCONF", "Name",
-                                               "New_NAME", "Number_of_courts_final", "NUMCOURTS", "OBJECTID", "OWNER",
-                                               "Ownership_final", "POINT_X", "POINT_Y", "Population", "REPLCSCONF",
-                                               "REPLCSRA", "REPLCSTOTL", "REPLRACONF", "RMLIFE", "RMLIFECONF",
-                                               "School_in_name", "Subcategory_1", "Subcategory_2", "TARGET_FID",
-                                               "WARNTYLAB", "WARRANTYDATE"])[0]
+        final_asset_point_outputfina_XYTableToPoint_2_ = arcpy.management.JoinField(
+            in_data=final_asset_point_outputfinal_asset_point_output_GroupByProximity_5_,
+            in_field="Join_Field",
+            join_table=final_asset_point_outputfinal_asset_point_output_GroupByProximity_4_,
+            join_field="Join_Field",
+            fields=[
+                    "Asset_Name", "ASSETCODE", "ASSETID", "ASSETSTAT", "BOATNAME", "CLASS",
+                   "CONDICONF", "CONDIT", "CONDITDTE", "Condition", "CRIT", "CRITCONF",
+                   "DIST_ID", "DISTNAME", "DISTNAME_ID", "GLOBALID_1", "GROUP_ID", "INSTCS",
+                   "INSTCSCONF", "INSTDATE", "INSTYR", "INSTYRCONF", "Join_Count",
+                   "Join_Field", "Lat", "LOCATION", "Long", "MAT", "MATCONF", "Name",
+                   "New_NAME", "Number_of_courts_final", "NUMCOURTS", "OBJECTID", "OWNER",
+                   "Ownership_final", "POINT_X", "POINT_Y", "Population", "REPLCSCONF",
+                   "REPLCSRA", "REPLCSTOTL", "REPLRACONF", "RMLIFE", "RMLIFECONF",
+                   "School_in_name", "Subcategory_1", "Subcategory_2", "TARGET_FID",
+                   "WARNTYLAB", "WARRANTYDATE"
+            ]
+        )[0]
 
     if dissed_3_:
-        final_asset_point_outputfina_XYTableToPoint_4_ = arcpy.management.CalculateGeometryAttributes(in_features=final_asset_point_outputfina_XYTableToPoint_2_,
-                                                         geometry_property=[["Lat", "POINT_X"]], length_unit="",
-                                                         area_unit="",
-                                                         coordinate_system="PROJCS[\"NAD_1983_CSRS_2010_MTM_5_Nova_Scotia\",GEOGCS[\"GCS_North_American_1983_CSRS_2010\",DATUM[\"D_North_American_1983_CSRS\",SPHEROID[\"GRS_1980\",6378137.0,298.257222101]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"False_Easting\",25500000.0],PARAMETER[\"False_Northing\",0.0],PARAMETER[\"Central_Meridian\",-64.5],PARAMETER[\"Scale_Factor\",0.9999],PARAMETER[\"Latitude_Of_Origin\",0.0],UNIT[\"Meter\",1.0]]",
-                                                         coordinate_format="DD")[0]
+        final_asset_point_outputfina_XYTableToPoint_4_ = arcpy.management.CalculateGeometryAttributes(
+            in_features=final_asset_point_outputfina_XYTableToPoint_2_,
+            geometry_property=[["Lat", "POINT_X"]],
+            length_unit="",
+            area_unit="",
+            coordinate_system="PROJCS[\"NAD_1983_CSRS_2010_MTM_5_Nova_Scotia\",GEOGCS[\"GCS_North_American_1983_CSRS_2010\",DATUM[\"D_North_American_1983_CSRS\",SPHEROID[\"GRS_1980\",6378137.0,298.257222101]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"False_Easting\",25500000.0],PARAMETER[\"False_Northing\",0.0],PARAMETER[\"Central_Meridian\",-64.5],PARAMETER[\"Scale_Factor\",0.9999],PARAMETER[\"Latitude_Of_Origin\",0.0],UNIT[\"Meter\",1.0]]",
+            coordinate_format="DD"
+        )[0]
 
     if dissed_3_:
-        final_asset_point_outputfina_XYTableToPoint_5_ = arcpy.management.CalculateGeometryAttributes(in_features=final_asset_point_outputfina_XYTableToPoint_4_,
-                                                         geometry_property=[["Long", "POINT_Y"]], length_unit="",
-                                                         area_unit="",
-                                                         coordinate_system="PROJCS[\"NAD_1983_CSRS_2010_MTM_5_Nova_Scotia\",GEOGCS[\"GCS_North_American_1983_CSRS_2010\",DATUM[\"D_North_American_1983_CSRS\",SPHEROID[\"GRS_1980\",6378137.0,298.257222101]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"False_Easting\",25500000.0],PARAMETER[\"False_Northing\",0.0],PARAMETER[\"Central_Meridian\",-64.5],PARAMETER[\"Scale_Factor\",0.9999],PARAMETER[\"Latitude_Of_Origin\",0.0],UNIT[\"Meter\",1.0]]",
-                                                         coordinate_format="DD")[0]
+        final_asset_point_outputfina_XYTableToPoint_5_ = arcpy.management.CalculateGeometryAttributes(
+            in_features=final_asset_point_outputfina_XYTableToPoint_4_,
+            geometry_property=[["Long", "POINT_Y"]],
+            length_unit="",
+            area_unit="",
+            coordinate_system="PROJCS[\"NAD_1983_CSRS_2010_MTM_5_Nova_Scotia\",GEOGCS[\"GCS_North_American_1983_CSRS_2010\",DATUM[\"D_North_American_1983_CSRS\",SPHEROID[\"GRS_1980\",6378137.0,298.257222101]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"False_Easting\",25500000.0],PARAMETER[\"False_Northing\",0.0],PARAMETER[\"Central_Meridian\",-64.5],PARAMETER[\"Scale_Factor\",0.9999],PARAMETER[\"Latitude_Of_Origin\",0.0],UNIT[\"Meter\",1.0]]",
+            coordinate_format="DD"
+        )[0]
 
     if dissed_3_:
         Final_Output = arcpy.management.CalculateField(in_table=final_asset_point_outputfina_XYTableToPoint_5_,
@@ -826,7 +850,8 @@ def SequentialNumber(a):
     elif a == 'All-Weather Sports Field':
         return 'Sports Field'
     else:
-        return ''""", field_type="TEXT", enforce_domains="NO_ENFORCE_DOMAINS")[0]
+        return ''""",
+                                                       field_type="TEXT", enforce_domains="NO_ENFORCE_DOMAINS")[0]
 
     if dissed_3_:
         NonMPtoSP_Merge_SpatialJoin_13, Count_4_ = arcpy.management.SelectLayerByAttribute(
@@ -914,15 +939,14 @@ def check(a,b):
 
     if dissed_3_:
         asset_name_joined = arcpy.conversion.FeatureClassToFeatureClass(in_features=final_asset_point_outputfina1_2_,
-                                                        out_path=OutputFGDB, out_name="asset_name_joined",
-                                                        config_keyword="")[0]
+                                                        out_path=OutputFGDB, out_name="asset_name_joined")[0]
 
     NonMPtoSP_Merge_SpatialJoin_2s = fr"{OutputFGDB}\NonMPtoSP_Merge_SpatialJoin_2s"
     if dissed_3_:
         arcpy.analysis.SpatialJoin(target_features=asset_name_joined, join_features=SDEADM_ADM_gsa_polygon,
                                        out_feature_class=NonMPtoSP_Merge_SpatialJoin_2s,
                                        join_operation="JOIN_ONE_TO_ONE", join_type="KEEP_ALL",
-                                       match_option="INTERSECT", search_radius="", distance_field_name="")
+                                       match_option="INTERSECT")
 
     if dissed_3_:
         NonMPtoSP_Merge_SpatialJoin_2_7_ = arcpy.management.CalculateField(in_table=NonMPtoSP_Merge_SpatialJoin_2s, field="GSA_NAME",
@@ -941,7 +965,7 @@ def check(a,b):
                                        join_features=rural_rec_commuter_areas,
                                        out_feature_class=NonMPtoSP_Merge_SpatialJoin_6,
                                        join_operation="JOIN_ONE_TO_ONE", join_type="KEEP_ALL",
-                                       match_option="INTERSECT", search_radius="", distance_field_name="")
+                                       match_option="INTERSECT")
 
     if dissed_3_:
         NonMPtoSP_Merge_SpatialJoin_6_3_ = arcpy.management.CalculateField(in_table=NonMPtoSP_Merge_SpatialJoin_6, field="Rural_Rec_Commuter_Area",
@@ -965,7 +989,7 @@ def check(a,b):
                                        join_features=SDEADM_LND_hrm_park,
                                        out_feature_class=NonMPtoSP_Merge_SpatialJoin_7_7_,
                                        join_operation="JOIN_ONE_TO_ONE", join_type="KEEP_ALL",
-                                       match_option="INTERSECT", search_radius="", distance_field_name="")
+                                       match_option="INTERSECT")
 
     if dissed_3_:
         NonMPtoSP_Merge_SpatialJoin_7_8_ = arcpy.management.CalculateField(in_table=NonMPtoSP_Merge_SpatialJoin_7_7_, field="PARK_NAME",
@@ -988,7 +1012,7 @@ def check(a,b):
         NonMPtoSP_Merge_SpatialJoin_7 = arcpy.management.AddField(in_table=NonMPtoSP_Merge_SpatialJoin_7_13_, field_name="Final_OID",
                                       field_type="LONG", field_precision=None, field_scale=None, field_length=None,
                                       field_alias="Final Object ID", field_is_nullable="NULLABLE",
-                                      field_is_required="NON_REQUIRED", field_domain="")[0]
+                                      field_is_required="NON_REQUIRED")[0]
 
     if dissed_3_:
         merge2_SpatialJoin3_Layer5_S1_3_merge2_SpatialJoin3_Layer5_S1_3_ = arcpy.management.CalculateField(in_table=NonMPtoSP_Merge_SpatialJoin_7, field="Final_OID",
@@ -1009,7 +1033,8 @@ def SequentialNumber(a):
         return a""", field_type="TEXT", enforce_domains="NO_ENFORCE_DOMAINS")[0]
 
     if dissed_3_:
-        NonMPtoSP_Merge_SpatialJoin_7_2_ = arcpy.management.AddField(in_table=merge2_SpatialJoin3_Layer5_S1_3_merge2_SpatialJoin3_Layer5_S1_3_,
+        NonMPtoSP_Merge_SpatialJoin_7_2_ = arcpy.management.AddField(
+            in_table=merge2_SpatialJoin3_Layer5_S1_3_merge2_SpatialJoin3_Layer5_S1_3_,
                                       field_name="asset_location", field_type="TEXT", field_precision=None,
                                       field_scale=None, field_length=None, field_alias="asset_location",
                                       field_is_nullable="NULLABLE", field_is_required="NON_REQUIRED", field_domain="")[
@@ -1079,7 +1104,7 @@ def cf(a,b):
         Updated_Input_Table_2_ = arcpy.management.AddField(in_table=final_output_final_output_4_, field_name="MAINRECUSE", field_type="TEXT",
                                       field_precision=None, field_scale=None, field_length=None,
                                       field_alias="Main Park Facility Use", field_is_nullable="NULLABLE",
-                                      field_is_required="NON_REQUIRED", field_domain="")[0]
+                                      field_is_required="NON_REQUIRED")[0]
 
     if dissed_3_:
         final_output_final_output_5_ = arcpy.management.CalculateField(in_table=Updated_Input_Table_2_, field="MAINRECUSE",
@@ -1152,12 +1177,12 @@ if __name__ == '__main__':
     import sys
 
     print(f"START Time: {datetime.now()}")
-    loggy.info("\n")
     loggy.info(f"\nSTART Time: {datetime.now()}")
 
     try:
 
         if arcpy.Exists(OutputFGDB):
+            loggy.info(f"Deleting exists workspace, {OutputFGDB}...")
             arcpy.Delete_management(OutputFGDB)
 
         gdb_dir = os.path.dirname(OutputFGDB)
@@ -1181,4 +1206,4 @@ if __name__ == '__main__':
         loggy.error(pymsg)
 
     loggy.info(f"END Time: {datetime.now()}")
-    print(f"\nEND Time: {datetime.now()}")
+    loggy.info("\n")
