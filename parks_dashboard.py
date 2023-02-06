@@ -19,10 +19,6 @@ from hrmutils import send_error
 arcpy.env.overwriteOutput = True
 arcpy.SetLogHistory(False)
 
-server_name = os.environ.get("COMPUTERNAME")
-script_name = os.path.basename(sys.argv[0])
-email_error_msg = f"ERROR - Parks dashboard script failed. {server_name} / {'script name'}"
-
 loggy.setLevel("INFO")
 
 config = configparser.ConfigParser()
@@ -1181,6 +1177,10 @@ def cf(a,b):
 if __name__ == '__main__':
     import traceback
 
+    server_name = os.environ.get("COMPUTERNAME")
+    script_name = os.path.basename(sys.argv[0])
+    email_error_msg = f"ERROR - Parks dashboard script failed. {server_name} / {script_name}"
+
     print(f"START Time: {datetime.now()}")
     loggy.info(f"\nSTART Time: {datetime.now()}")
 
@@ -1200,7 +1200,7 @@ if __name__ == '__main__':
         arcpy_msgs = arcpy.GetMessages(2)
         loggy.error(f"ARCPY ERROR: {arcpy_msgs}")
 
-        send_error(email_error_msg)
+        send_error("ERROR - Parks dashboard failed", email_error_msg)
 
     except Exception as e:
         loggy.error(f"ERROR: {e}")
@@ -1211,6 +1211,8 @@ if __name__ == '__main__':
         pymsg = f"PYTHON ERRORS:\nTraceback Info:\n{tbinfo}\nError Info:\n    {sys.exc_info()[0]}: {sys.exc_info()[1]}"
 
         loggy.error(pymsg)
+        
+        send_error("ERROR - Parks dashboard failed", email_error_msg)
 
     loggy.info(f"END Time: {datetime.now()}")
     loggy.info("\n")
